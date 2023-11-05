@@ -13,15 +13,6 @@ class DistancePairWise:
     def __init__(self, expr: pl.Expr):
         self._expr = expr
 
-    # def euclidean(self, other: IntoExpr) -> pl.Expr:
-    #     """Returns hamming distance between two expressions"""
-    #     return self._expr.register_plugin(
-    #         lib=lib,
-    #         args=[other],
-    #         symbol="euclidean_accelerated",
-    #         is_elementwise=True,
-    #     )
-
 
 @pl.api.register_expr_namespace("pdist_str")
 class DistancePairWiseString:

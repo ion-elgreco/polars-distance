@@ -1,0 +1,22 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0", "polars>=0.19.9"]
+build-backend = "maturin"
+
+[project]
+name = "polars-distance"
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Rust",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+version = "0.1.0"
+authors = [
+  { name="Ion Koutsours", email="15728914+ion-elgreco@users.noreply.github.com"},
+]
+description = "Polars plugin for pair-wise distance functions"
+readme = "README.md"
+
+[project.urls]
+"Homepage" = "https://github.com/ion-elgreco/polars-distance"
+"Bug Tracker" = "https://github.com/ion-elgreco/polars-distance/issues"

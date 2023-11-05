@@ -1,0 +1,18 @@
+[package]
+name = "polars_distance"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "polars_distance"
+crate-type = ["cdylib"]
+
+[dependencies]
+polars = { version = "*" }
+pyo3 = { version = "0.20", features = ["extension-module"] }
+pyo3-polars = { version = "0.8", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+distances = { version = "1.5.1"}
+
+[target.'cfg(target_os = "linux")'.dependencies]
+jemallocator = { version = "0.5", features = ["disable_initial_exec_tls"] }

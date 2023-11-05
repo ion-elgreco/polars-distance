@@ -22,6 +22,7 @@ class DistancePairWise:
     #         is_elementwise=True,
     #     )
 
+
 @pl.api.register_expr_namespace("pdist_str")
 class DistancePairWiseString:
     def __init__(self, expr: pl.Expr):

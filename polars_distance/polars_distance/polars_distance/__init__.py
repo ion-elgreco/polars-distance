@@ -47,7 +47,7 @@ class DistancePairWiseString:
         )
 
 
-class HExpr(pl.Expr):
+class DExpr(pl.Expr):
     @property
     def pdist(self) -> DistancePairWise:
         return DistancePairWise(self)
@@ -62,7 +62,7 @@ class DistColumn(Protocol):
         self,
         name: str | PolarsDataType | Iterable[str] | Iterable[PolarsDataType],
         *more_names: str | PolarsDataType,
-    ) -> HExpr:
+    ) -> DExpr:
         ...
 
     def __getattr__(self, name: str) -> pl.Expr:

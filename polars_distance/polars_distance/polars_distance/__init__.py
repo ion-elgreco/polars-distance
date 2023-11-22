@@ -5,7 +5,7 @@ from polars.type_aliases import PolarsDataType, IntoExpr
 
 lib = _get_shared_lib_location(__file__)
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 @pl.api.register_expr_namespace("pdist")

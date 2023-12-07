@@ -37,25 +37,17 @@ fn distance_calc_float_inp(
         ComputeError: "inner data types must be float"
     );
 
-    try_binary_elementwise(
-        a,
-        b,
-        |a: Option<Box<dyn Array>>, b| { 
-            match (a, b) {
-            (Some(a), Some(b)) => {
-                if a.null_count() > 0 || b.null_count() > 0 {
-                    polars_bail!(ComputeError: "array cannot contain nulls")
-                } else {
-                    let a = &collect_into_vecf64(a);
-                    let b = &collect_into_vecf64(b);
-                    Ok(
-                        Some(f(a, b)
-                
-                    ))
-                }
+    try_binary_elementwise(a, b, |a: Option<Box<dyn Array>>, b| match (a, b) {
+        (Some(a), Some(b)) => {
+            if a.null_count() > 0 || b.null_count() > 0 {
+                polars_bail!(ComputeError: "array cannot contain nulls")
+            } else {
+                let a = &collect_into_vecf64(a);
+                let b = &collect_into_vecf64(b);
+                Ok(Some(f(a, b)))
             }
-            _ => Ok(None),
         }
+        _ => Ok(None),
     })
 }
 
@@ -85,25 +77,23 @@ fn euclidean_dist(
         ComputeError: "inner data types must be float"
     );
 
-    try_binary_elementwise(a, b, |a: Option<Box<dyn Array>>, b| {
-        match (a, b) {
-            (Some(a), Some(b)) => {
-                if a.null_count() > 0 || b.null_count() > 0 {
-                    polars_bail!(ComputeError: "array cannot contain nulls")
-                } else {
-                    let a = collect_array_in_iter(&a);
-                    let b = collect_array_in_iter(&b);
+    try_binary_elementwise(a, b, |a: Option<Box<dyn Array>>, b| match (a, b) {
+        (Some(a), Some(b)) => {
+            if a.null_count() > 0 || b.null_count() > 0 {
+                polars_bail!(ComputeError: "array cannot contain nulls")
+            } else {
+                let a = collect_array_in_iter(&a);
+                let b = collect_array_in_iter(&b);
 
-                    Ok(Some(
-                        a.zip(b)
-                            .map(|(x, y)| (x.unwrap() - y.unwrap()).powi(2))
-                            .sum::<f64>()
-                            .sqrt(),
-                    ))
-                }
+                Ok(Some(
+                    a.zip(b)
+                        .map(|(x, y)| (x.unwrap() - y.unwrap()).powi(2))
+                        .sum::<f64>()
+                        .sqrt(),
+                ))
             }
-            _ => Ok(None),
         }
+        _ => Ok(None),
     })
 }
 
@@ -130,7 +120,11 @@ fn cosine_dist(
                     let a = collect_array_in_iter(&a);
                     let b = collect_array_in_iter(&b);
 
-                    let dot_prod: f64 = a.clone().zip(b.clone()).map(|(x, y)| x.unwrap() * y.unwrap()).sum();
+                    let dot_prod: f64 = a
+                        .clone()
+                        .zip(b.clone())
+                        .map(|(x, y)| x.unwrap() * y.unwrap())
+                        .sum();
                     let mag1: f64 = a.map(|x| x.unwrap().powi(2)).sum();
                     let mag2: f64 = b.map(|y| y.unwrap().powi(2)).sum();
 
@@ -198,7 +192,6 @@ fn cosine_arr(inputs: &[Series]) -> PolarsResult<Series> {
     }
     cosine_dist(x, y).map(|ca| ca.into_series())
 }
-
 
 #[polars_expr(output_type=Float64)]
 fn chebyshev_arr(inputs: &[Series]) -> PolarsResult<Series> {

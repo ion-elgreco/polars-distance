@@ -5,16 +5,52 @@ from polars.type_aliases import PolarsDataType, IntoExpr
 
 lib = _get_shared_lib_location(__file__)
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
-@pl.api.register_expr_namespace("pdist")
-class DistancePairWise:
+@pl.api.register_expr_namespace("dist_arr")
+class DistancePairWiseArray:
     def __init__(self, expr: pl.Expr):
         self._expr = expr
 
+    def euclidean(self, other: IntoExpr) -> pl.Expr:
+        """Returns euclidean distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="euclidean_arr",
+            is_elementwise=True,
+        )
 
-@pl.api.register_expr_namespace("pdist_str")
+    def cosine(self, other: IntoExpr) -> pl.Expr:
+        """Returns cosine distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="cosine_arr",
+            is_elementwise=True,
+        )
+
+    def chebyshev(self, other: IntoExpr) -> pl.Expr:
+        """Returns chebyshev distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="chebyshev_arr",
+            is_elementwise=True,
+        )
+
+    def canberra(self, other: IntoExpr) -> pl.Expr:
+        """Returns canberra distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="canberra_arr",
+            is_elementwise=True,
+        )
+
+
+@pl.api.register_expr_namespace("dist_str")
 class DistancePairWiseString:
     def __init__(self, expr: pl.Expr):
         self._expr = expr
@@ -24,7 +60,7 @@ class DistancePairWiseString:
         return self._expr.register_plugin(
             lib=lib,
             args=[other],
-            symbol="hamming_string",
+            symbol="hamming_str",
             is_elementwise=True,
         )
 
@@ -33,18 +69,18 @@ class DistancePairWiseString:
         return self._expr.register_plugin(
             lib=lib,
             args=[other],
-            symbol="levenshtein_string",
+            symbol="levenshtein_str",
             is_elementwise=True,
         )
 
 
 class DExpr(pl.Expr):
     @property
-    def pdist(self) -> DistancePairWise:
-        return DistancePairWise(self)
+    def dist_arr(self) -> DistancePairWiseArray:
+        return DistancePairWiseArray(self)
 
     @property
-    def pdist_str(self) -> DistancePairWiseString:
+    def dist_str(self) -> DistancePairWiseString:
         return DistancePairWiseString(self)
 
 
@@ -60,11 +96,11 @@ class DistColumn(Protocol):
         ...
 
     @property
-    def pdist(self) -> DistancePairWise:
+    def dist_arr(self) -> DistancePairWiseArray:
         ...
 
     @property
-    def pdist_str(self) -> DistancePairWiseString:
+    def dist_str(self) -> DistancePairWiseString:
         ...
 
 

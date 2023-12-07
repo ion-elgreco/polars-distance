@@ -13,7 +13,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Ion Koutsours", email="15728914+ion-elgreco@users.noreply.github.com"},
 ]

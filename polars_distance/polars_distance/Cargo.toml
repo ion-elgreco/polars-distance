@@ -16,3 +16,8 @@ distances = { version = "1.5.1"}
 
 [target.'cfg(target_os = "linux")'.dependencies]
 jemallocator = { version = "0.5", features = ["disable_initial_exec_tls"] }
+
+[workspace]
+members = [
+    "../polars_distance",
+]

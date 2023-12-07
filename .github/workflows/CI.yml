@@ -36,8 +36,8 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.3
       - run: make install
         working-directory: polars_distance
-      # - run: venv/bin/python -m pytest tests # disable tests until I add tests
-      #   working-directory: polars_distance
+      - run: venv/bin/python -m pytest tests
+        working-directory: polars_distance
       - run: venv/bin/python -m black --check .
         working-directory: polars_distance
       - run: venv/bin/python -m mypy polars_distance/polars_distance

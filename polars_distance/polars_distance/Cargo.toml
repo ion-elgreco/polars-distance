@@ -1,6 +1,6 @@
 [package]
 name = "polars_distance"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 [lib]
@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 polars = { version = "*" , features = ["dtype-array"]}
+polars-arrow = {version = "*"}
 pyo3 = { version = "0.20", features = ["extension-module"] }
 pyo3-polars = { version = "0.9", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }

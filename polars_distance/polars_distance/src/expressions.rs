@@ -69,13 +69,18 @@ fn euclidean_dist(
             if a.null_count() > 0 || b.null_count() > 0 {
                 polars_bail!(ComputeError: "array cannot contain nulls")
             } else {
-                // let a = a.as_any().downcast_ref::<PrimitiveArray<f64>>().unwrap();
-                // let b = b.as_any().downcast_ref::<PrimitiveArray<f64>>().unwrap();
+                let a = a
+                    .as_any()
+                    .downcast_ref::<PrimitiveArray<f64>>()
+                    .unwrap()
+                    .values_iter();
+                let b = b
+                    .as_any()
+                    .downcast_ref::<PrimitiveArray<f64>>()
+                    .unwrap()
+                    .values_iter();
                 Ok(Some(
-                    a.as_any().downcast_ref::<PrimitiveArray<f64>>().unwrap().values_iter().zip(b.as_any().downcast_ref::<PrimitiveArray<f64>>().unwrap().values_iter())
-                        .map(|(x, y)| (x- y).powi(2))
-                        .sum::<f64>()
-                        .sqrt(),
+                    a.zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt(),
                 ))
             }
         }
@@ -96,32 +101,35 @@ fn cosine_dist(
         ComputeError: "inner data types must be float"
     );
 
-    try_binary_elementwise(a, b, |a: Option<Box<dyn Array>>, b| {
-        match (a, b) {
-            (Some(a), Some(b)) => {
-                if a.null_count() > 0 || b.null_count() > 0 {
-                    polars_bail!(ComputeError: "array cannot contain nulls")
+    try_binary_elementwise(a, b, |a: Option<Box<dyn Array>>, b| match (a, b) {
+        (Some(a), Some(b)) => {
+            if a.null_count() > 0 || b.null_count() > 0 {
+                polars_bail!(ComputeError: "array cannot contain nulls")
+            } else {
+                let a = a
+                    .as_any()
+                    .downcast_ref::<PrimitiveArray<f64>>()
+                    .unwrap()
+                    .values_iter();
+                let b = b
+                    .as_any()
+                    .downcast_ref::<PrimitiveArray<f64>>()
+                    .unwrap()
+                    .values_iter();
+
+                let dot_prod: f64 = a.clone().zip(b.clone()).map(|(x, y)| x * y).sum();
+                let mag1: f64 = a.map(|x| x.powi(2)).sum();
+                let mag2: f64 = b.map(|y| y.powi(2)).sum();
+
+                let res = if mag1 == 0.0 || mag2 == 0.0 {
+                    0.0
                 } else {
-                    let a = a.as_any().downcast_ref::<PrimitiveArray<f64>>().unwrap().values_iter();
-                    let b = b.as_any().downcast_ref::<PrimitiveArray<f64>>().unwrap().values_iter();
-
-                    let dot_prod: f64 = a.clone()
-                        .zip(b.clone())
-                        .map(|(x, y)| x * y)
-                        .sum();
-                    let mag1: f64 = a.map(|x| x.powi(2)).sum();
-                    let mag2: f64 = b.map(|y| y.powi(2)).sum();
-
-                    let res = if mag1 == 0.0 || mag2 == 0.0 {
-                        0.0
-                    } else {
-                        1.0 - (dot_prod / (mag1 * mag2))
-                    };
-                    Ok(Some(res))
-                }
+                    1.0 - (dot_prod / (mag1 * mag2))
+                };
+                Ok(Some(res))
             }
-            _ => Ok(None),
         }
+        _ => Ok(None),
     })
 }
 

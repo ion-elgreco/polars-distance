@@ -8,7 +8,7 @@ name = "polars_distance"
 crate-type = ["cdylib"]
 
 [dependencies]
-polars = { version = "*" }
+polars = { version = "*" , features = ["dtype-array"]}
 pyo3 = { version = "0.20", features = ["extension-module"] }
 pyo3-polars = { version = "0.9", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }

@@ -118,8 +118,8 @@ fn cosine_dist(
                     .values_iter();
 
                 let dot_prod: f64 = a.clone().zip(b.clone()).map(|(x, y)| x * y).sum();
-                let mag1: f64 = a.map(|x| x.powi(2)).sum();
-                let mag2: f64 = b.map(|y| y.powi(2)).sum();
+                let mag1: f64 = a.map(|x| x.powi(2)).sum::<f64>().sqrt();
+                let mag2: f64 = b.map(|y| y.powi(2)).sum::<f64>().sqrt();
 
                 let res = if mag1 == 0.0 || mag2 == 0.0 {
                     0.0

@@ -1,6 +1,6 @@
 [package]
 name = "polars_distance"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 
 [lib]
@@ -22,3 +22,8 @@ jemallocator = { version = "0.5", features = ["disable_initial_exec_tls"] }
 members = [
     "../polars_distance",
 ]
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"

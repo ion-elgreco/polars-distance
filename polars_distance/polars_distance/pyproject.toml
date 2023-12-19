@@ -6,14 +6,14 @@ build-backend = "maturin"
 name = "polars-distance"
 requires-python = ">=3.8"
 dependencies = [
-  'polars >= 0.19.14'
+  'polars >= 0.20.1'
 ]
 classifiers = [
   "Programming Language :: Rust",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-version = "0.1.5"
+version = "0.2.0"
 authors = [
   { name="Ion Koutsours", email="15728914+ion-elgreco@users.noreply.github.com"},
 ]

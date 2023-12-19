@@ -1,4 +1,5 @@
 use crate::array::{cosine_dist, distance_calc_float_inp, euclidean_dist};
+use crate::list::jaccard_index;
 use crate::string::{hamming_distance_string, levenshtein_distance_string};
 use distances::vectors::{canberra, chebyshev};
 use polars::prelude::*;
@@ -30,8 +31,8 @@ fn levenshtein_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
-    let x: &ChunkedArray<FixedSizeListType> = inputs[0].array()?;
-    let y: &ChunkedArray<FixedSizeListType> = inputs[1].array()?;
+    let x: &ArrayChunked = inputs[0].array()?;
+    let y: &ArrayChunked = inputs[1].array()?;
 
     if x.width() != y.width() {
         polars_bail!(InvalidOperation:
@@ -44,8 +45,8 @@ fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn cosine_arr(inputs: &[Series]) -> PolarsResult<Series> {
-    let x: &ChunkedArray<FixedSizeListType> = inputs[0].array()?;
-    let y: &ChunkedArray<FixedSizeListType> = inputs[1].array()?;
+    let x: &ArrayChunked = inputs[0].array()?;
+    let y: &ArrayChunked = inputs[1].array()?;
 
     if x.width() != y.width() {
         polars_bail!(InvalidOperation:
@@ -58,8 +59,8 @@ fn cosine_arr(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn chebyshev_arr(inputs: &[Series]) -> PolarsResult<Series> {
-    let x: &ChunkedArray<FixedSizeListType> = inputs[0].array()?;
-    let y: &ChunkedArray<FixedSizeListType> = inputs[1].array()?;
+    let x: &ArrayChunked = inputs[0].array()?;
+    let y: &ArrayChunked = inputs[1].array()?;
 
     if x.width() != y.width() {
         polars_bail!(InvalidOperation:
@@ -72,8 +73,8 @@ fn chebyshev_arr(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn canberra_arr(inputs: &[Series]) -> PolarsResult<Series> {
-    let x: &ChunkedArray<FixedSizeListType> = inputs[0].array()?;
-    let y: &ChunkedArray<FixedSizeListType> = inputs[1].array()?;
+    let x: &ArrayChunked = inputs[0].array()?;
+    let y: &ArrayChunked = inputs[1].array()?;
 
     if x.width() != y.width() {
         polars_bail!(InvalidOperation:
@@ -82,4 +83,11 @@ fn canberra_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
     distance_calc_float_inp(x, y, canberra).map(|ca| ca.into_series())
+}
+
+#[polars_expr(output_type=Float64)]
+fn jaccard_index_list(inputs: &[Series]) -> PolarsResult<Series> {
+    let x: &ChunkedArray<ListType> = inputs[0].list()?;
+    let y: &ChunkedArray<ListType> = inputs[1].list()?;
+    jaccard_index(x, y).map(|ca| ca.into_series())
 }

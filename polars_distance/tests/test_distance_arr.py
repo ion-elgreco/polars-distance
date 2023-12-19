@@ -22,6 +22,18 @@ def data():
     )
 
 
+@pytest.fixture()
+def data_sets():
+    return pl.DataFrame(
+        {
+            "x_str": [["1"]],
+            "y_str": [["1", "2", "3"]],
+            "x_int": [[1]],
+            "y_int": [[1, 2, 3]],
+        },
+    )
+
+
 def test_cosine(data):
     result = data.select(
         pld.col("arr").dist_arr.cosine("arr2").alias("dist_cosine"),
@@ -104,3 +116,22 @@ def test_levenshtein(data):
     )
 
     assert_frame_equal(result, expected)
+
+
+def test_jaccard_index(data_sets):
+    result = data_sets.select(
+        pld.col("x_str").dist_list.jaccard_index("y_str").alias("jaccard_index")
+    )
+
+    result_int = data_sets.select(
+        pld.col("x_int").dist_list.jaccard_index("y_int").alias("jaccard_index")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("jaccard_index", [0.3333333333333333], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+    assert_frame_equal(result_int, expected)

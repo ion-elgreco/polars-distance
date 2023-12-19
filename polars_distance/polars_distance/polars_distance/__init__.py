@@ -5,7 +5,7 @@ from polars.type_aliases import PolarsDataType, IntoExpr
 
 lib = _get_shared_lib_location(__file__)
 
-__version__ = "0.1.5"
+__version__ = "0.2.0"
 
 
 @pl.api.register_expr_namespace("dist_arr")
@@ -74,6 +74,21 @@ class DistancePairWiseString:
         )
 
 
+@pl.api.register_expr_namespace("dist_list")
+class DistancePairWiseList:
+    def __init__(self, expr: pl.Expr):
+        self._expr = expr
+
+    def jaccard_index(self, other: IntoExpr) -> pl.Expr:
+        """Returns jaccard index between two lists. Each list is converted to a set."""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="jaccard_index_list",
+            is_elementwise=True,
+        )
+
+
 class DExpr(pl.Expr):
     @property
     def dist_arr(self) -> DistancePairWiseArray:
@@ -82,6 +97,10 @@ class DExpr(pl.Expr):
     @property
     def dist_str(self) -> DistancePairWiseString:
         return DistancePairWiseString(self)
+
+    @property
+    def dist_list(self) -> DistancePairWiseList:
+        return DistancePairWiseList(self)
 
 
 class DistColumn(Protocol):
@@ -101,6 +120,10 @@ class DistColumn(Protocol):
 
     @property
     def dist_str(self) -> DistancePairWiseString:
+        ...
+
+    @property
+    def dist_list(self) -> DistancePairWiseList:
         ...
 
 

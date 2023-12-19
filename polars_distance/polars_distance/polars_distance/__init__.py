@@ -97,6 +97,15 @@ class DistancePairWiseList:
             is_elementwise=True,
         )
 
+    def overlap_coef(self, other: IntoExpr) -> pl.Expr:
+        """Returns sorensen index between two lists. Each list is converted to a set."""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="overlap_coef_list",
+            is_elementwise=True,
+        )
+
 
 class DExpr(pl.Expr):
     @property

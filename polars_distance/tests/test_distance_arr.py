@@ -154,3 +154,22 @@ def test_sorensen_index(data_sets):
 
     assert_frame_equal(result, expected)
     assert_frame_equal(result_int, expected)
+
+
+def test_overlap_coef(data_sets):
+    result = data_sets.select(
+        pld.col("x_str").dist_list.overlap_coef("y_str").alias("overlap")
+    )
+
+    result_int = data_sets.select(
+        pld.col("x_int").dist_list.overlap_coef("y_int").alias("overlap")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("overlap", [1.0], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+    assert_frame_equal(result_int, expected)

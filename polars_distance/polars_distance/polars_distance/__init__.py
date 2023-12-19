@@ -98,11 +98,20 @@ class DistancePairWiseList:
         )
 
     def overlap_coef(self, other: IntoExpr) -> pl.Expr:
-        """Returns sorensen index between two lists. Each list is converted to a set."""
+        """Returns overlap coef between two lists. Each list is converted to a set."""
         return self._expr.register_plugin(
             lib=lib,
             args=[other],
             symbol="overlap_coef_list",
+            is_elementwise=True,
+        )
+
+    def cosine(self, other: IntoExpr) -> pl.Expr:
+        """Returns cosine distance between two lists. Each list is converted to a set."""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="cosine_list",
             is_elementwise=True,
         )
 

@@ -1,4 +1,5 @@
 use core::hash::Hash;
+use distances::Number;
 use polars::prelude::arity::binary_elementwise;
 use polars::prelude::*;
 use polars_arrow::array::{PrimitiveArray, Utf8Array};
@@ -57,6 +58,25 @@ fn overlap_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
     let len_intersect = s1.intersection(&s2).count();
 
     len_intersect as f64 / std::cmp::min(s1.len(), s2.len()) as f64
+}
+
+fn cosine_int_array<T: NativeType + Hash + Eq>(
+    a: &PrimitiveArray<T>,
+    b: &PrimitiveArray<T>,
+) -> f64 {
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count();
+
+    len_intersect as f64 / (s1.len() as f64).sqrt() * (s2.len() as f64).sqrt()
+}
+
+fn cosine_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count();
+
+    len_intersect as f64 / (s1.len() as f64).sqrt() * (s2.len() as f64).sqrt()
 }
 
 pub fn elementwise_int_inp<T: NativeType + Hash + Eq>(
@@ -138,6 +158,24 @@ pub fn overlap_coef(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Chu
             DataType::Utf8 => elementwise_string_inp(a,b, overlap_str_array),
             _ => Err(PolarsError::ComputeError(
                 format!("overlap coefficient only works on inner dtype Utf8 or integer. Use of {} is not supported", a.inner_dtype()).into(),
+            ))
+        }
+    }
+}
+
+pub fn cosine_set_distance(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Chunked> {
+    polars_ensure!(
+        a.inner_dtype() == b.inner_dtype(),
+        ComputeError: "inner data types don't match"
+    );
+
+    if a.inner_dtype().is_integer() {
+        with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, cosine_int_array::<$T>)})
+    } else {
+        match a.inner_dtype() {
+            DataType::Utf8 => elementwise_string_inp(a,b, cosine_str_array),
+            _ => Err(PolarsError::ComputeError(
+                format!("cosine set distance only works on inner dtype Utf8 or integer. Use of {} is not supported", a.inner_dtype()).into(),
             ))
         }
     }

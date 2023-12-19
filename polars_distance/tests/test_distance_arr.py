@@ -173,3 +173,22 @@ def test_overlap_coef(data_sets):
 
     assert_frame_equal(result, expected)
     assert_frame_equal(result_int, expected)
+
+
+def test_cosine_set_distance(data_sets):
+    result = data_sets.select(
+        pld.col("x_str").dist_list.cosine("y_str").alias("cosine_set")
+    )
+
+    result_int = data_sets.select(
+        pld.col("x_int").dist_list.cosine("y_int").alias("cosine_set")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("cosine_set", [1.7320508075688772], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+    assert_frame_equal(result_int, expected)

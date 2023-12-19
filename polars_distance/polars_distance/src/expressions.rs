@@ -1,5 +1,5 @@
 use crate::array::{cosine_dist, distance_calc_float_inp, euclidean_dist};
-use crate::list::jaccard_index;
+use crate::list::{jaccard_index, sorensen_index};
 use crate::string::{hamming_distance_string, levenshtein_distance_string};
 use distances::vectors::{canberra, chebyshev};
 use polars::prelude::*;
@@ -90,4 +90,11 @@ fn jaccard_index_list(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ChunkedArray<ListType> = inputs[0].list()?;
     let y: &ChunkedArray<ListType> = inputs[1].list()?;
     jaccard_index(x, y).map(|ca| ca.into_series())
+}
+
+#[polars_expr(output_type=Float64)]
+fn sorensen_index_list(inputs: &[Series]) -> PolarsResult<Series> {
+    let x: &ChunkedArray<ListType> = inputs[0].list()?;
+    let y: &ChunkedArray<ListType> = inputs[1].list()?;
+    sorensen_index(x, y).map(|ca| ca.into_series())
 }

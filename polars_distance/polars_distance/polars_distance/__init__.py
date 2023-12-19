@@ -88,6 +88,15 @@ class DistancePairWiseList:
             is_elementwise=True,
         )
 
+    def sorensen_index(self, other: IntoExpr) -> pl.Expr:
+        """Returns sorensen index between two lists. Each list is converted to a set."""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="sorensen_index_list",
+            is_elementwise=True,
+        )
+
 
 class DExpr(pl.Expr):
     @property

@@ -135,3 +135,22 @@ def test_jaccard_index(data_sets):
 
     assert_frame_equal(result, expected)
     assert_frame_equal(result_int, expected)
+
+
+def test_sorensen_index(data_sets):
+    result = data_sets.select(
+        pld.col("x_str").dist_list.sorensen_index("y_str").alias("sorensen_index")
+    )
+
+    result_int = data_sets.select(
+        pld.col("x_int").dist_list.sorensen_index("y_int").alias("sorensen_index")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("sorensen_index", [0.5], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+    assert_frame_equal(result_int, expected)

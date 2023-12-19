@@ -1,8 +1,8 @@
 Hellooo :)
 
-This plugin is a work-in progress, main goal is to provide distance metrics on list, arrays and string.
+This plugin is a work-in progress, main goal is to provide distance metrics on list, arrays and string datatypes.
 
-The plugin provides two namespaces: 
+The plugin provides three namespaces: 
 
 - dist_str
     - hamming
@@ -12,6 +12,11 @@ The plugin provides two namespaces:
     - cosine
     - chebyshev
     - canberra
+- dist_list (these act as set similary metrics)
+    - jaccard_index
+    - sorensen_index
+    - overlap_coef
+    - cosine
 
 ## Examples
 

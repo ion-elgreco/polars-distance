@@ -135,3 +135,60 @@ def test_jaccard_index(data_sets):
 
     assert_frame_equal(result, expected)
     assert_frame_equal(result_int, expected)
+
+
+def test_sorensen_index(data_sets):
+    result = data_sets.select(
+        pld.col("x_str").dist_list.sorensen_index("y_str").alias("sorensen_index")
+    )
+
+    result_int = data_sets.select(
+        pld.col("x_int").dist_list.sorensen_index("y_int").alias("sorensen_index")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("sorensen_index", [0.5], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+    assert_frame_equal(result_int, expected)
+
+
+def test_overlap_coef(data_sets):
+    result = data_sets.select(
+        pld.col("x_str").dist_list.overlap_coef("y_str").alias("overlap")
+    )
+
+    result_int = data_sets.select(
+        pld.col("x_int").dist_list.overlap_coef("y_int").alias("overlap")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("overlap", [1.0], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+    assert_frame_equal(result_int, expected)
+
+
+def test_cosine_set_distance(data_sets):
+    result = data_sets.select(
+        pld.col("x_str").dist_list.cosine("y_str").alias("cosine_set")
+    )
+
+    result_int = data_sets.select(
+        pld.col("x_int").dist_list.cosine("y_int").alias("cosine_set")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("cosine_set", [1.7320508075688772], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+    assert_frame_equal(result_int, expected)

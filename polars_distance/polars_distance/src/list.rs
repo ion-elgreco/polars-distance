@@ -1,4 +1,5 @@
 use core::hash::Hash;
+use distances::Number;
 use polars::prelude::arity::binary_elementwise;
 use polars::prelude::*;
 use polars_arrow::array::{PrimitiveArray, Utf8Array};
@@ -8,8 +9,8 @@ use polars_core::with_match_physical_integer_type;
 fn jacc_int_array<T: NativeType + Hash + Eq>(a: &PrimitiveArray<T>, b: &PrimitiveArray<T>) -> f64 {
     let s1 = a.into_iter().collect::<PlHashSet<_>>();
     let s2 = b.into_iter().collect::<PlHashSet<_>>();
-
     let len_intersect = s1.intersection(&s2).count();
+
     len_intersect as f64 / (s1.len() + s2.len() - len_intersect) as f64
 }
 
@@ -17,7 +18,95 @@ fn jacc_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
     let s1 = a.into_iter().collect::<PlHashSet<_>>();
     let s2 = b.into_iter().collect::<PlHashSet<_>>();
     let len_intersect = s1.intersection(&s2).count();
+
     len_intersect as f64 / (s1.len() + s2.len() - len_intersect) as f64
+}
+
+fn sorensen_int_array<T: NativeType + Hash + Eq>(
+    a: &PrimitiveArray<T>,
+    b: &PrimitiveArray<T>,
+) -> f64 {
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count();
+
+    (2 * len_intersect) as f64 / (s1.len() + s2.len()) as f64
+}
+
+fn sorensen_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count();
+
+    (2 * len_intersect) as f64 / (s1.len() + s2.len()) as f64
+}
+
+fn overlap_int_array<T: NativeType + Hash + Eq>(
+    a: &PrimitiveArray<T>,
+    b: &PrimitiveArray<T>,
+) -> f64 {
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count();
+
+    len_intersect as f64 / std::cmp::min(s1.len(), s2.len()) as f64
+}
+
+fn overlap_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count();
+
+    len_intersect as f64 / std::cmp::min(s1.len(), s2.len()) as f64
+}
+
+fn cosine_int_array<T: NativeType + Hash + Eq>(
+    a: &PrimitiveArray<T>,
+    b: &PrimitiveArray<T>,
+) -> f64 {
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count();
+
+    len_intersect as f64 / (s1.len() as f64).sqrt() * (s2.len() as f64).sqrt()
+}
+
+fn cosine_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count();
+
+    len_intersect as f64 / (s1.len() as f64).sqrt() * (s2.len() as f64).sqrt()
+}
+
+pub fn elementwise_int_inp<T: NativeType + Hash + Eq>(
+    a: &ListChunked,
+    b: &ListChunked,
+    f: fn(&PrimitiveArray<T>, &PrimitiveArray<T>) -> f64,
+) -> PolarsResult<Float64Chunked> {
+    Ok(binary_elementwise(a, b, |a, b| match (a, b) {
+        (Some(a), Some(b)) => {
+            let a = a.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
+            let b = b.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
+            Some(f(a, b))
+        }
+        _ => None,
+    }))
+}
+
+pub fn elementwise_string_inp(
+    a: &ListChunked,
+    b: &ListChunked,
+    f: fn(&Utf8Array<i64>, &Utf8Array<i64>) -> f64,
+) -> PolarsResult<Float64Chunked> {
+    Ok(binary_elementwise(a, b, |a, b| match (a, b) {
+        (Some(a), Some(b)) => {
+            let a = a.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
+            let b = b.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
+            Some(f(a, b))
+        }
+        _ => None,
+    }))
 }
 
 pub fn jaccard_index(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Chunked> {
@@ -27,49 +116,66 @@ pub fn jaccard_index(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Ch
     );
 
     if a.inner_dtype().is_integer() {
-        Ok(with_match_physical_integer_type!(a.inner_dtype(), |$T| {
-            binary_elementwise(a, b, |a, b| {
-                match (a, b) {
-                    (Some(a), Some(b)) => {
-                        let a = a.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
-                        let b = b.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
-                        Some(jacc_int_array(a, b))
-                    },
-                    _ => None
-                }
-                })
-            }
-        ))
+        with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, jacc_int_array::<$T>)})
     } else {
         match a.inner_dtype() {
-            DataType::Utf8 => {
-                Ok(binary_elementwise(a, b, |a, b| {
-                    match (a, b) {
-                        (Some(a), Some(b)) => {
-                            let a = a.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
-                            let b = b.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
-                            Some(jacc_str_array(a, b))
-                        },
-                        _ => None
-                    }
-                    }))
-                },
-            // DataType::Categorical(_) =>  {
-            //     let a = a.cast(&DataType::List(Box::new(DataType::Utf8)))?;
-            //     let b = b.cast(&DataType::List(Box::new(DataType::Utf8)))?;
-            //     Ok(binary_elementwise(a.list()?, b.list()?, |a, b| {
-            //         match (a, b) {
-            //             (Some(a), Some(b)) => {
-            //                 let a = a.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
-            //                 let b = b.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
-            //                 Some(5.0)
-            //             },
-            //             _ => None
-            //         }
-            //         }))
-            //     },
+            DataType::Utf8 => elementwise_string_inp(a,b, jacc_str_array),
             _ => Err(PolarsError::ComputeError(
                 format!("jaccard index only works on inner dtype Utf8 or integer. Use of {} is not supported", a.inner_dtype()).into(),
+            ))
+        }
+    }
+}
+
+pub fn sorensen_index(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Chunked> {
+    polars_ensure!(
+        a.inner_dtype() == b.inner_dtype(),
+        ComputeError: "inner data types don't match"
+    );
+
+    if a.inner_dtype().is_integer() {
+        with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, sorensen_int_array::<$T>)})
+    } else {
+        match a.inner_dtype() {
+            DataType::Utf8 => elementwise_string_inp(a,b, sorensen_str_array),
+            _ => Err(PolarsError::ComputeError(
+                format!("sorensen index only works on inner dtype Utf8 or integer. Use of {} is not supported", a.inner_dtype()).into(),
+            ))
+        }
+    }
+}
+
+pub fn overlap_coef(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Chunked> {
+    polars_ensure!(
+        a.inner_dtype() == b.inner_dtype(),
+        ComputeError: "inner data types don't match"
+    );
+
+    if a.inner_dtype().is_integer() {
+        with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, overlap_int_array::<$T>)})
+    } else {
+        match a.inner_dtype() {
+            DataType::Utf8 => elementwise_string_inp(a,b, overlap_str_array),
+            _ => Err(PolarsError::ComputeError(
+                format!("overlap coefficient only works on inner dtype Utf8 or integer. Use of {} is not supported", a.inner_dtype()).into(),
+            ))
+        }
+    }
+}
+
+pub fn cosine_set_distance(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Chunked> {
+    polars_ensure!(
+        a.inner_dtype() == b.inner_dtype(),
+        ComputeError: "inner data types don't match"
+    );
+
+    if a.inner_dtype().is_integer() {
+        with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, cosine_int_array::<$T>)})
+    } else {
+        match a.inner_dtype() {
+            DataType::Utf8 => elementwise_string_inp(a,b, cosine_str_array),
+            _ => Err(PolarsError::ComputeError(
+                format!("cosine set distance only works on inner dtype Utf8 or integer. Use of {} is not supported", a.inner_dtype()).into(),
             ))
         }
     }

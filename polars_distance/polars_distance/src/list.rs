@@ -179,3 +179,52 @@ pub fn cosine_set_distance(a: &ListChunked, b: &ListChunked) -> PolarsResult<Flo
         }
     }
 }
+
+pub fn tversky_index(a: &ListChunked, b: &ListChunked, alpha: f64, beta: f64) -> PolarsResult<Float64Chunked> {
+    polars_ensure!(
+        a.inner_dtype() == b.inner_dtype(),
+        ComputeError: "inner data types don't match"
+    );
+
+    if a.inner_dtype().is_integer() {
+        with_match_physical_integer_type!(a.inner_dtype(), |$T| {
+            Ok(binary_elementwise(a, b, |a, b| match (a, b) {
+                (Some(a), Some(b)) => {
+                    let a = a.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
+                    let b = b.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
+                    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+                    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+                    let len_intersect = s1.intersection(&s2).count() as f64;
+                    let len_diff1 = s1.difference(&s2).count();
+                    let len_diff2 = s2.difference(&s1).count();
+                
+                    Some(len_intersect / (len_intersect +  (alpha * len_diff1 as f64) + (beta * len_diff2 as f64)))
+                }
+                _ => None,
+            }))
+        
+        })
+    } else {
+        match a.inner_dtype() {
+            DataType::Utf8 => {
+                Ok(binary_elementwise(a, b, |a, b| match (a, b) {
+                    (Some(a), Some(b)) => {
+                        let a = a.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
+                        let b = b.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
+                        let s1 = a.into_iter().collect::<PlHashSet<_>>();
+                        let s2 = b.into_iter().collect::<PlHashSet<_>>();
+                        let len_intersect = s1.intersection(&s2).count() as f64;
+                        let len_diff1 = s1.difference(&s2).count();
+                        let len_diff2 = s2.difference(&s1).count();
+                    
+                        Some(len_intersect / (len_intersect +  (alpha * len_diff1 as f64) + (beta * len_diff2 as f64)))
+                    }
+                    _ => None,
+                }))
+            },
+            _ => Err(PolarsError::ComputeError(
+                format!("tversky index distance only works on inner dtype Utf8 or integer. Use of {} is not supported", a.inner_dtype()).into(),
+            ))
+        }
+    }
+}

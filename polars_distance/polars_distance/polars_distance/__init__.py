@@ -244,6 +244,16 @@ class DistancePairWiseList:
             is_elementwise=True,
         )
 
+    def tversky_index(self, other: IntoExpr, alpha: float, beta: float) -> pl.Expr:
+        """Returns tversky index between two lists. Each list is converted to a set."""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            kwargs={"alpha": alpha, "beta": beta},
+            symbol="tversky_index_list",
+            is_elementwise=True,
+        )
+
     def sorensen_index(self, other: IntoExpr) -> pl.Expr:
         """Returns sorensen index between two lists. Each list is converted to a set."""
         return self._expr.register_plugin(

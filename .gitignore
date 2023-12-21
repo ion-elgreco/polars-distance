@@ -5,3 +5,4 @@ venv/
 target/
 rust-toolchain.toml
 *.pyc
+site

@@ -167,4 +167,6 @@ jobs:
             mkdocs-material-
       - run: make install
         working-directory: polars_distance
+      - run: pip install -r requirements.txt
+        working-directory: polars_distance
       - run: mkdocs gh-deploy --force

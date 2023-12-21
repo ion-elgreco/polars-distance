@@ -55,23 +55,179 @@ class DistancePairWiseString:
     def __init__(self, expr: pl.Expr):
         self._expr = expr
 
-    def hamming(self, other: IntoExpr) -> pl.Expr:
+    def hamming(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns hamming distance between two expressions"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="hamming_str",
-            is_elementwise=True,
-        )
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="hamming_normalized_str",
+                is_elementwise=True,
+            )
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="hamming_str",
+                is_elementwise=True,
+            )
 
-    def levenshtein(self, other: IntoExpr) -> pl.Expr:
+    def levenshtein(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns levenshtein distance between two expressions"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="levenshtein_str",
-            is_elementwise=True,
-        )
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="levenshtein_normalized_str",
+                is_elementwise=True,
+            )
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="levenshtein_str",
+                is_elementwise=True,
+            )
+
+    def damerau_levenshtein(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
+        """Returns damerau levenshtein distance between two expressions"""
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="damerau_levenshtein_normalized_str",
+                is_elementwise=True,
+            )
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="damerau_levenshtein_str",
+                is_elementwise=True,
+            )
+
+    def indel(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
+        """Returns indel distance between two expressions"""
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="indel_normalized_str",
+                is_elementwise=True,
+            )
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="indel_str",
+                is_elementwise=True,
+            )
+
+    def jaro(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
+        """Returns jaro distance between two expressions"""
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="jaro_normalized_str",
+                is_elementwise=True,
+            )
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="jaro_str",
+                is_elementwise=True,
+            )
+
+    def jaro_winkler(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
+        """Returns jaro_winkler distance between two expressions"""
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="jaro_winkler_normalized_str",
+                is_elementwise=True,
+            )
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="jaro_winkler_str",
+                is_elementwise=True,
+            )
+
+    def lcs_seq(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
+        """Returns lcs_seq distance between two expressions"""
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="lcs_seq_normalized_str",
+                is_elementwise=True,
+            )
+
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="lcs_seq_str",
+                is_elementwise=True,
+            )
+
+    def osa(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
+        """Returns osa distance between two expressions"""
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="osa_normalized_str",
+                is_elementwise=True,
+            )
+
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="osa_str",
+                is_elementwise=True,
+            )
+
+    def postfix(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
+        """Returns postfix distance between two expressions"""
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="postfix_normalized_str",
+                is_elementwise=True,
+            )
+
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="postfix_str",
+                is_elementwise=True,
+            )
+
+    def prefix(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
+        """Returns prefix distance between two expressions"""
+        if normalized:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="prefix_normalized_str",
+                is_elementwise=True,
+            )
+
+        else:
+            return self._expr.register_plugin(
+                lib=lib,
+                args=[other],
+                symbol="prefix_str",
+                is_elementwise=True,
+            )
 
 
 @pl.api.register_expr_namespace("dist_list")

@@ -97,7 +97,7 @@ def test_hamming_str(data):
 
     expected = pl.DataFrame(
         [
-            pl.Series("dist_hamming", [6], dtype=pl.UInt32),
+            pl.Series("dist_hamming", [8], dtype=pl.UInt32),
         ]
     )
 

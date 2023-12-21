@@ -180,7 +180,12 @@ pub fn cosine_set_distance(a: &ListChunked, b: &ListChunked) -> PolarsResult<Flo
     }
 }
 
-pub fn tversky_index(a: &ListChunked, b: &ListChunked, alpha: f64, beta: f64) -> PolarsResult<Float64Chunked> {
+pub fn tversky_index(
+    a: &ListChunked,
+    b: &ListChunked,
+    alpha: f64,
+    beta: f64,
+) -> PolarsResult<Float64Chunked> {
     polars_ensure!(
         a.inner_dtype() == b.inner_dtype(),
         ComputeError: "inner data types don't match"
@@ -197,12 +202,12 @@ pub fn tversky_index(a: &ListChunked, b: &ListChunked, alpha: f64, beta: f64) ->
                     let len_intersect = s1.intersection(&s2).count() as f64;
                     let len_diff1 = s1.difference(&s2).count();
                     let len_diff2 = s2.difference(&s1).count();
-                
+
                     Some(len_intersect / (len_intersect +  (alpha * len_diff1 as f64) + (beta * len_diff2 as f64)))
                 }
                 _ => None,
             }))
-        
+
         })
     } else {
         match a.inner_dtype() {
@@ -216,7 +221,6 @@ pub fn tversky_index(a: &ListChunked, b: &ListChunked, alpha: f64, beta: f64) ->
                         let len_intersect = s1.intersection(&s2).count() as f64;
                         let len_diff1 = s1.difference(&s2).count();
                         let len_diff2 = s2.difference(&s1).count();
-                    
                         Some(len_intersect / (len_intersect +  (alpha * len_diff1 as f64) + (beta * len_diff2 as f64)))
                     }
                     _ => None,

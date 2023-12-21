@@ -1,5 +1,7 @@
 use crate::array::{cosine_dist, distance_calc_float_inp, euclidean_dist};
-use crate::list::{cosine_set_distance, jaccard_index, overlap_coef, sorensen_index, tversky_index};
+use crate::list::{
+    cosine_set_distance, jaccard_index, overlap_coef, sorensen_index, tversky_index,
+};
 use crate::string::{
     dam_levenshtein_dist, dam_levenshtein_normalized_dist, hamming_dist, hamming_normalized_dist,
     indel_dist, indel_normalized_dist, jaro_dist, jaro_normalized_dist, jaro_winkler_dist,

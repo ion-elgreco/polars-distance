@@ -194,7 +194,7 @@ def test_cosine_set_distance(data_sets):
     assert_frame_equal(result_int, expected)
 
 
-def test_cosine_set_distance(data_sets):
+def test_tversky_set_distance(data_sets):
     result = data_sets.select(
         pld.col("x_str")
         .dist_list.tversky_index("y_str", alpha=1, beta=1)

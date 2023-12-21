@@ -50,7 +50,7 @@ class DistancePairWiseArray:
         )
 
     def bray_curtis(self, other: IntoExpr) -> pl.Expr:
-        """Returns chebyshev distance between two vectors"""
+        """Returns bray_curtis distance between two vectors"""
         return self._expr.register_plugin(
             lib=lib,
             args=[other],

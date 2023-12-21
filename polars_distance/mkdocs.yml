@@ -1,0 +1,100 @@
+site_name: polars-distance documentation
+site_url: https://github.com/ion-elgreco/polars-distance
+repo_url: https://github.com/ion-elgreco/polars-distance
+repo_name: ion-elgreco/polars-distance
+
+theme:
+  name: material
+  
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      primary: indigo
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+        
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  locale: en
+  navigation_depth: 3
+  features:
+    - navigation.tracking
+    - navigation.instant
+    - navigation.expand
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.tabs.sticky
+    - navigation.footer
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+nav:
+  - Home: index.md
+  - Usage:
+    - Overview: usage/index.md
+  - API Reference:
+    - api/string_distance.md 
+    - api/array_distance.md
+    - api/list_distance.md
+
+exclude_docs: |
+  /_build/
+  /mlc_config.json
+  /src
+  /requirements.txt
+  *.py
+
+plugins:
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          path: [../polars_distance/polars_distance]
+          options:
+            show_root_toc_entry: false
+            docstring_section_style: table
+            filters: ["!^_", "^__init__$"]
+            heading_level: 3
+            show_source: false
+            show_symbol_type_in_heading: true
+            show_signature_annotations: true
+            show_root_heading: true
+            show_root_full_path: true
+            separate_signature: true
+            docstring_options:
+              ignore_init_summary: false
+            merge_init_into_class: true
+  - search:
+      lang: en
+  - markdown-exec
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - footnotes

@@ -4,3 +4,10 @@ pytest
 mypy
 ruff
 black
+mkdocs-material
+mkdocs
+mkdocstrings[python]
+mkdocs-autorefs
+mkdocs-macros-plugin
+markdown-exec[ansi]
+mkdocs-simple-hooks

@@ -1,5 +1,7 @@
 use crate::array::{cosine_dist, distance_calc_float_inp, euclidean_dist};
-use crate::list::{cosine_set_distance, jaccard_index, overlap_coef, sorensen_index};
+use crate::list::{
+    cosine_set_distance, jaccard_index, overlap_coef, sorensen_index, tversky_index,
+};
 use crate::string::{
     dam_levenshtein_dist, dam_levenshtein_normalized_dist, hamming_dist, hamming_normalized_dist,
     indel_dist, indel_normalized_dist, jaro_dist, jaro_normalized_dist, jaro_winkler_dist,
@@ -10,12 +12,13 @@ use crate::string::{
 use distances::vectors::{canberra, chebyshev};
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-// use serde::Deserialize;
+use serde::Deserialize;
 
-// #[derive(Deserialize)]
-// struct StringDistanceKwargs {
-//     normalized: bool,
-// }
+#[derive(Deserialize)]
+struct TverskyIndexKwargs {
+    alpha: f64,
+    beta: f64,
+}
 
 #[polars_expr(output_type=UInt32)]
 fn hamming_str(inputs: &[Series]) -> PolarsResult<Series> {
@@ -340,4 +343,11 @@ fn cosine_list(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ChunkedArray<ListType> = inputs[0].list()?;
     let y: &ChunkedArray<ListType> = inputs[1].list()?;
     cosine_set_distance(x, y).map(|ca| ca.into_series())
+}
+
+#[polars_expr(output_type=Float64)]
+fn tversky_index_list(inputs: &[Series], kwargs: TverskyIndexKwargs) -> PolarsResult<Series> {
+    let x: &ChunkedArray<ListType> = inputs[0].list()?;
+    let y: &ChunkedArray<ListType> = inputs[1].list()?;
+    tversky_index(x, y, kwargs.alpha, kwargs.beta).map(|ca| ca.into_series())
 }

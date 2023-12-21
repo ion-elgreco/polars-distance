@@ -192,3 +192,26 @@ def test_cosine_set_distance(data_sets):
 
     assert_frame_equal(result, expected)
     assert_frame_equal(result_int, expected)
+
+
+def test_cosine_set_distance(data_sets):
+    result = data_sets.select(
+        pld.col("x_str")
+        .dist_list.tversky_index("y_str", alpha=1, beta=1)
+        .alias("tversky")
+    )
+
+    result_int = data_sets.select(
+        pld.col("x_int")
+        .dist_list.tversky_index("y_int", alpha=1, beta=1)
+        .alias("tversky")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("tversky", [0.3333333333333333], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+    assert_frame_equal(result_int, expected)

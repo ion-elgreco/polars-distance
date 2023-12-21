@@ -2,35 +2,7 @@ Hellooo :)
 
 This plugin is a work-in progress, main goal is to provide distance metrics on list, arrays and string datatypes.
 
-The plugin provides three namespaces: 
-
-- dist_str
-    - hamming
-    - levenshtein
-    - damerau_levenshtein
-    - indel
-    - jaro
-    - jaro_winkler
-    - lcs_seq
-    - osa
-    - postfix
-    - prefix
-- dist_arr
-    - euclidean
-    - cosine
-    - chebyshev
-    - canberra
-    - bray_curtis
-    - manhatten
-    - minkowski
-    - l3_norm
-    - l4_norm
-- dist_list (these act as set similary metrics)
-    - jaccard_index
-    - sorensen_index
-    - tversky_index
-    - overlap_coef
-    - cosine
+The docs can be found here: https://ion-elgreco.github.io/polars-distance/
 
 ## Examples
 

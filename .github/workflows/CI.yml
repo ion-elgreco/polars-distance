@@ -168,3 +168,4 @@ jobs:
       - run: pip install -r requirements.txt
         working-directory: polars_distance
       - run: mkdocs gh-deploy --force
+        working-directory: polars_distance

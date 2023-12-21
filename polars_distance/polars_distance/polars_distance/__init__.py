@@ -49,6 +49,52 @@ class DistancePairWiseArray:
             is_elementwise=True,
         )
 
+    def bray_curtis(self, other: IntoExpr) -> pl.Expr:
+        """Returns chebyshev distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="bray_curtis_arr",
+            is_elementwise=True,
+        )
+
+    def manhatten(self, other: IntoExpr) -> pl.Expr:
+        """Returns manhatten distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="manhatten_arr",
+            is_elementwise=True,
+        )
+
+    def minkowski(self, other: IntoExpr, p: int) -> pl.Expr:
+        """Returns minkowski distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            kwargs={"p": p},
+            symbol="minkowski_arr",
+            is_elementwise=True,
+        )
+
+    def l3_norm(self, other: IntoExpr) -> pl.Expr:
+        """Returns l3_norm distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="l3_norm_arr",
+            is_elementwise=True,
+        )
+
+    def l4_norm(self, other: IntoExpr) -> pl.Expr:
+        """Returns l4_norm distance between two vectors"""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="l4_norm_arr",
+            is_elementwise=True,
+        )
+
 
 @pl.api.register_expr_namespace("dist_str")
 class DistancePairWiseString:

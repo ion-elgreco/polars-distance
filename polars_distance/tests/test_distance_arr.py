@@ -76,6 +76,37 @@ def test_canberra(data):
     assert_frame_equal(result, expected)
 
 
+def test_bray_curtis(data):
+    result = data.select(
+        pld.col("arr")
+        .cast(pl.Array(pl.UInt64, 4))
+        .dist_arr.bray_curtis(pl.col("arr2").cast(pl.Array(pl.UInt64, 4)))
+        .alias("dist_bray"),
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("dist_bray", [0.5], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+
+
+def test_manhatten(data):
+    result = data.select(
+        pld.col("arr").dist_arr.manhatten("arr2").alias("dist_manhatten"),
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("dist_manhatten", [18.0], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)
+
+
 def test_euclidean(data):
     result = data.select(
         pld.col("arr").dist_arr.euclidean("arr2").alias("dist_euclidean"),

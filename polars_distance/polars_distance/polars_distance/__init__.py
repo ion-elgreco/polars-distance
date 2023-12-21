@@ -102,7 +102,10 @@ class DistancePairWiseString:
         self._expr = expr
 
     def hamming(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
-        """Returns hamming distance between two expressions"""
+        """Returns hamming distance between two expressions.
+
+        The length of the shortest string is padded to the length of longest string.
+        """
         if normalized:
             return self._expr.register_plugin(
                 lib=lib,

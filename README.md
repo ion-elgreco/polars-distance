@@ -7,14 +7,28 @@ The plugin provides three namespaces:
 - dist_str
     - hamming
     - levenshtein
+    - damerau_levenshtein
+    - indel
+    - jaro
+    - jaro_winkler
+    - lcs_seq
+    - osa
+    - postfix
+    - prefix
 - dist_arr
     - euclidean
     - cosine
     - chebyshev
     - canberra
+    - bray_curtis
+    - manhatten
+    - minkowski
+    - l3_norm
+    - l4_norm
 - dist_list (these act as set similary metrics)
     - jaccard_index
     - sorensen_index
+    - tversky_index
     - overlap_coef
     - cosine
 
@@ -37,7 +51,7 @@ df.select(
 │ ---  │
 │ u32  │
 ╞══════╡
-│ 1    │
+│ 7    │
 └──────┘
 
 

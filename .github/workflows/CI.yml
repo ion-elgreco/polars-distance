@@ -147,7 +147,7 @@ jobs:
           args: --non-interactive --skip-existing *
   
 
-  deploy:
+  deploy_docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -165,6 +165,6 @@ jobs:
           path: .cache
           restore-keys: |
             mkdocs-material-
-      - run: pip install requirements.txt
+      - run: pip install -r requirements.txt
         working-directory: polars_distance
       - run: mkdocs gh-deploy --force

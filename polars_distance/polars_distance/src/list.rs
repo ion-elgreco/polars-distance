@@ -1,5 +1,4 @@
 use core::hash::Hash;
-use distances::Number;
 use polars::prelude::arity::binary_elementwise;
 use polars::prelude::*;
 use polars_arrow::array::{PrimitiveArray, Utf8Array};

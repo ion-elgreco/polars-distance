@@ -166,5 +166,5 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install requirements.txt
-        working_directory: polars_distance
+        working-directory: polars_distance
       - run: mkdocs gh-deploy --force

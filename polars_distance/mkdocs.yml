@@ -50,6 +50,7 @@ nav:
     - api/string_distance.md 
     - api/array_distance.md
     - api/list_distance.md
+    - api/dist.md
 
 exclude_docs: |
   /_build/

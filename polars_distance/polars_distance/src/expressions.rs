@@ -4,6 +4,7 @@ use crate::array::{
 use crate::list::{
     cosine_set_distance, jaccard_index, overlap_coef, sorensen_index, tversky_index,
 };
+use crate::other_dist::haversine_dist;
 use crate::string::{
     dam_levenshtein_dist, dam_levenshtein_normalized_dist, hamming_dist, hamming_normalized_dist,
     indel_dist, indel_normalized_dist, jaro_dist, jaro_normalized_dist, jaro_winkler_dist,
@@ -25,6 +26,11 @@ struct TverskyIndexKwargs {
 #[derive(Deserialize)]
 struct MinkowskiKwargs {
     p: i32,
+}
+
+#[derive(Deserialize)]
+struct HaversineKwargs {
+    unit: String,
 }
 
 // STR EXPRESSIONS
@@ -435,4 +441,49 @@ fn tversky_index_list(inputs: &[Series], kwargs: TverskyIndexKwargs) -> PolarsRe
     let x: &ChunkedArray<ListType> = inputs[0].list()?;
     let y: &ChunkedArray<ListType> = inputs[1].list()?;
     tversky_index(x, y, kwargs.alpha, kwargs.beta).map(|ca| ca.into_series())
+}
+
+#[polars_expr(output_type=Float64)]
+fn haversine_struct(inputs: &[Series], kwargs: HaversineKwargs) -> PolarsResult<Series> {
+    let ca_x: &StructChunked = inputs[0].struct_()?;
+    let ca_y: &StructChunked = inputs[1].struct_()?;
+
+    let x_lat = ca_x.field_by_name("latitude")?;
+    let x_long = ca_x.field_by_name("longitude")?;
+
+    let y_lat = ca_y.field_by_name("latitude")?;
+    let y_long = ca_y.field_by_name("longitude")?;
+
+    polars_ensure!(
+        x_lat.dtype() == x_long.dtype() && x_lat.dtype().is_float(),
+        ComputeError: "x data types should match"
+    );
+
+    polars_ensure!(
+        y_lat.dtype() == y_long.dtype() && y_lat.dtype().is_float(),
+        ComputeError: "y data types should match"
+    );
+
+    polars_ensure!(
+        x_lat.dtype() == y_lat.dtype(),
+        ComputeError: "x and y data types should match"
+    );
+
+    Ok(match *x_lat.dtype() {
+        DataType::Float32 => {
+            let x_lat = x_lat.f32().unwrap();
+            let x_long = x_long.f32().unwrap();
+            let y_lat = y_lat.f32().unwrap();
+            let y_long = y_long.f32().unwrap();
+            haversine_dist(x_lat, x_long, y_lat, y_long, kwargs.unit)?.into_series()
+        }
+        DataType::Float64 => {
+            let x_lat = x_lat.f64().unwrap();
+            let x_long = x_long.f64().unwrap();
+            let y_lat = y_lat.f64().unwrap();
+            let y_long = y_long.f64().unwrap();
+            haversine_dist(x_lat, x_long, y_lat, y_long, kwargs.unit)?.into_series()
+        }
+        _ => unimplemented!(),
+    })
 }

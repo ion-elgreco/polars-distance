@@ -246,3 +246,24 @@ def test_tversky_set_distance(data_sets):
 
     assert_frame_equal(result, expected)
     assert_frame_equal(result_int, expected)
+
+
+@pytest.mark.parametrize(
+    "unit,value", [("km", 0.5491557912038084), ("miles", 0.341336828310639)]
+)
+def test_haversine(unit, value):
+    df = pl.DataFrame(
+        {
+            "x": [{"latitude": 38.898556, "longitude": -77.037852}],
+            "y": [{"latitude": 38.897147, "longitude": -77.043934}],
+        }
+    )
+
+    result = df.select(pld.col("x").dist.haversine("y", unit=unit).alias("haversine"))
+    expected = pl.DataFrame(
+        [
+            pl.Series("haversine", [value], dtype=pl.Float64),
+        ]
+    )
+
+    assert_frame_equal(result, expected)

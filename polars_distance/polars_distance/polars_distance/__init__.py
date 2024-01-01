@@ -1,11 +1,50 @@
 import polars as pl
 from polars.utils.udfs import _get_shared_lib_location
-from typing import Protocol, Iterable, cast
+from typing import Protocol, Iterable, cast, Literal
 from polars.type_aliases import PolarsDataType, IntoExpr
 
 lib = _get_shared_lib_location(__file__)
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
+
+
+@pl.api.register_expr_namespace("dist")
+class DistancePairWise:
+    def __init__(self, expr: pl.Expr):
+        self._expr = expr
+
+    def haversine(
+        self, other: IntoExpr, unit: Literal["km", "miles"] = "km"
+    ) -> pl.Expr:
+        """Returns haversine distance between two structs with the keys latitude, longitude.
+
+        Example:
+            ```python
+            df = pl.DataFrame(
+                    {
+                        "x": [{"latitude": 38.898556, "longitude": -77.037852}],
+                        "y": [{"latitude": 38.897147, "longitude": -77.043934}],
+                    }
+                )
+            df.select(pld.col('x').dist.haversine('y', 'km').alias('haversine'))
+
+            shape: (1, 1)
+            ┌───────────┐
+            │ haversine │
+            │ ---       │
+            │ f64       │
+            ╞═══════════╡
+            │ 0.549156  │
+            └───────────┘
+            ```
+        """
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            kwargs={"unit": unit},
+            symbol="haversine_struct",
+            is_elementwise=True,
+        )
 
 
 @pl.api.register_expr_namespace("dist_arr")
@@ -333,6 +372,10 @@ class DistancePairWiseList:
 
 class DExpr(pl.Expr):
     @property
+    def dist(self) -> DistancePairWise:
+        return DistancePairWise(self)
+
+    @property
     def dist_arr(self) -> DistancePairWiseArray:
         return DistancePairWiseArray(self)
 
@@ -354,6 +397,10 @@ class DistColumn(Protocol):
         ...
 
     def __getattr__(self, name: str) -> pl.Expr:
+        ...
+
+    @property
+    def dist(self) -> DistancePairWise:
         ...
 
     @property

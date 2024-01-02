@@ -1,11 +1,12 @@
+from typing import Iterable, Literal, Protocol, cast
+
 import polars as pl
+from polars.type_aliases import IntoExpr, PolarsDataType
 from polars.utils.udfs import _get_shared_lib_location
-from typing import Protocol, Iterable, cast, Literal
-from polars.type_aliases import PolarsDataType, IntoExpr
+
+from ._internal import __version__ as __version__
 
 lib = _get_shared_lib_location(__file__)
-
-__version__ = "0.3.1"
 
 
 @pl.api.register_expr_namespace("dist")

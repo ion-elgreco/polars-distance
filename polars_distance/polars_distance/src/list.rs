@@ -118,8 +118,8 @@ pub fn jaccard_index(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Ch
         with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, jacc_int_array::<$T>)})
     } else {
         match a.inner_dtype() {
-            DataType::Utf8 => elementwise_string_inp(a,b, jacc_str_array),
-            DataType::Categorical(_) => elementwise_int_inp(a,b, jacc_int_array::<u32>),
+            DataType::String => elementwise_string_inp(a,b, jacc_str_array),
+            DataType::Categorical(_,_) => elementwise_int_inp(a,b, jacc_int_array::<u32>),
             _ => Err(PolarsError::ComputeError(
                 format!("jaccard index only works on inner dtype Utf8, Categorical and integer. Use of {} is not supported", a.inner_dtype()).into(),
             ))
@@ -137,8 +137,8 @@ pub fn sorensen_index(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64C
         with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, sorensen_int_array::<$T>)})
     } else {
         match a.inner_dtype() {
-            DataType::Utf8 => elementwise_string_inp(a,b, sorensen_str_array),
-            DataType::Categorical(_) => elementwise_int_inp(a,b, sorensen_int_array::<u32>),
+            DataType::String => elementwise_string_inp(a,b, sorensen_str_array),
+            DataType::Categorical(_,_) => elementwise_int_inp(a,b, sorensen_int_array::<u32>),
             _ => Err(PolarsError::ComputeError(
                 format!("sorensen index only works on inner dtype Utf8, Categorical and integer. Use of {} is not supported", a.inner_dtype()).into(),
             ))
@@ -156,8 +156,8 @@ pub fn overlap_coef(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Chu
         with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, overlap_int_array::<$T>)})
     } else {
         match a.inner_dtype() {
-            DataType::Utf8 => elementwise_string_inp(a,b, overlap_str_array),
-            DataType::Categorical(_) => elementwise_int_inp(a,b, overlap_int_array::<u32>),
+            DataType::String => elementwise_string_inp(a,b, overlap_str_array),
+            DataType::Categorical(_,_) => elementwise_int_inp(a,b, overlap_int_array::<u32>),
             _ => Err(PolarsError::ComputeError(
                 format!("overlap coefficient only works on inner dtype Utf8, Categorical and integer. Use of {} is not supported", a.inner_dtype()).into(),
             ))
@@ -175,8 +175,8 @@ pub fn cosine_set_distance(a: &ListChunked, b: &ListChunked) -> PolarsResult<Flo
         with_match_physical_integer_type!(a.inner_dtype(), |$T| {elementwise_int_inp(a, b, cosine_int_array::<$T>)})
     } else {
         match a.inner_dtype() {
-            DataType::Utf8 => elementwise_string_inp(a,b, cosine_str_array),
-            DataType::Categorical(_) => elementwise_int_inp(a,b, cosine_int_array::<u32>),
+            DataType::String => elementwise_string_inp(a,b, cosine_str_array),
+            DataType::Categorical(_,_) => elementwise_int_inp(a,b, cosine_int_array::<u32>),
             _ => Err(PolarsError::ComputeError(
                 format!("cosine set distance only works on inner dtype Utf8, Categorical and integer. Use of {} is not supported", a.inner_dtype()).into(),
             ))
@@ -215,7 +215,7 @@ pub fn tversky_index(
         })
     } else {
         match a.inner_dtype() {
-            DataType::Utf8 => {
+            DataType::String => {
                 Ok(binary_elementwise(a, b, |a, b| match (a, b) {
                     (Some(a), Some(b)) => {
                         let a = a.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
@@ -230,7 +230,7 @@ pub fn tversky_index(
                     _ => None,
                 }))
             },
-            DataType::Categorical(_) => {
+            DataType::Categorical(_, _) => {
                 Ok(binary_elementwise(a, b, |a, b| match (a, b) {
                     (Some(a), Some(b)) => {
                         let a = a.as_any().downcast_ref::<PrimitiveArray<u32>>().unwrap();

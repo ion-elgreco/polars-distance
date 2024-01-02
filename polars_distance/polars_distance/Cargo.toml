@@ -8,14 +8,14 @@ name = "polars_distance"
 crate-type = ["cdylib"]
 
 [dependencies]
-polars = { version = "*" , features = ["dtype-struct", "dtype-array", 'dtype-categorical', 'dtype-u16', 'dtype-u8', 'dtype-i8','dtype-i16']}
-polars-core = {version = "*"}
-polars-arrow = {version = "*"}
+polars = { version = "0.36.2" , features = ["dtype-struct", "dtype-array", 'dtype-categorical', 'dtype-u16', 'dtype-u8', 'dtype-i8','dtype-i16']}
+polars-core = {version = "0.36.2"}
+polars-arrow = {version = "0.36.2"}
 pyo3 = { version = "0.20", features = ["extension-module"] }
-pyo3-polars = { version = "0.9", features = ["derive"] }
+pyo3-polars = { version = "0.10", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 distances = { version = "1.5.1"}
-rapidfuzz = { version = "*"}
+rapidfuzz = { version = "0.5.0"}
 
 [target.'cfg(target_os = "linux")'.dependencies]
 jemallocator = { version = "0.5", features = ["disable_initial_exec_tls"] }

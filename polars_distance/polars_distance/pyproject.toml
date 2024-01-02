@@ -13,7 +13,6 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-version = "0.3.1"
 authors = [
   { name="Ion Koutsours", email="15728914+ion-elgreco@users.noreply.github.com"},
 ]
@@ -23,3 +22,6 @@ readme = "README.md"
 [project.urls]
 "Homepage" = "https://github.com/ion-elgreco/polars-distance"
 "Bug Tracker" = "https://github.com/ion-elgreco/polars-distance/issues"
+
+[tool.maturin]
+module-name = "polars_distance._internal"

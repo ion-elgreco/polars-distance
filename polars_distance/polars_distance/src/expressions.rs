@@ -36,11 +36,11 @@ struct HaversineKwargs {
 // STR EXPRESSIONS
 #[polars_expr(output_type=UInt32)]
 fn hamming_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String hamming distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, hamming_dist);
     Ok(out.into_series())
@@ -48,11 +48,11 @@ fn hamming_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn hamming_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String hamming distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, hamming_normalized_dist);
     Ok(out.into_series())
@@ -60,11 +60,11 @@ fn hamming_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=UInt32)]
 fn levenshtein_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String levenshtein distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, levenshtein_dist);
     Ok(out.into_series())
@@ -72,11 +72,11 @@ fn levenshtein_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn levenshtein_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String levenshtein distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, levenshtein_normalized_dist);
     Ok(out.into_series())
@@ -84,11 +84,11 @@ fn levenshtein_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=UInt32)]
 fn damerau_levenshtein_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String damerau levenshtein distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, dam_levenshtein_dist);
     Ok(out.into_series())
@@ -96,11 +96,11 @@ fn damerau_levenshtein_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn damerau_levenshtein_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String damerau levenshtein distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked =
         arity::binary_elementwise_values(x, y, dam_levenshtein_normalized_dist);
@@ -109,11 +109,11 @@ fn damerau_levenshtein_normalized_str(inputs: &[Series]) -> PolarsResult<Series>
 
 #[polars_expr(output_type=UInt32)]
 fn indel_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String indel distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, indel_dist);
     Ok(out.into_series())
@@ -121,11 +121,11 @@ fn indel_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn indel_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String indel distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, indel_normalized_dist);
     Ok(out.into_series())
@@ -133,11 +133,11 @@ fn indel_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=UInt32)]
 fn jaro_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String jaro distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, jaro_dist);
     Ok(out.into_series())
@@ -145,11 +145,11 @@ fn jaro_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn jaro_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String jaro distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, jaro_normalized_dist);
     Ok(out.into_series())
@@ -157,11 +157,11 @@ fn jaro_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=UInt32)]
 fn jaro_winkler_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String jaro winkler distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, jaro_winkler_dist);
     Ok(out.into_series())
@@ -169,11 +169,11 @@ fn jaro_winkler_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn jaro_winkler_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String jaro winkler distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, jaro_winkler_normalized_dist);
     Ok(out.into_series())
@@ -181,11 +181,11 @@ fn jaro_winkler_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=UInt32)]
 fn lcs_seq_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String longest common subsequence distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, lcs_seq_dist);
     Ok(out.into_series())
@@ -193,11 +193,11 @@ fn lcs_seq_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn lcs_seq_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String longest common subsequence distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, lcs_seq_normalized_dist);
     Ok(out.into_series())
@@ -205,11 +205,11 @@ fn lcs_seq_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=UInt32)]
 fn osa_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String osa distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, osa_dist);
     Ok(out.into_series())
@@ -217,11 +217,11 @@ fn osa_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn osa_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String osa distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, osa_normalized_dist);
     Ok(out.into_series())
@@ -229,11 +229,11 @@ fn osa_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=UInt32)]
 fn postfix_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String postfix distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, postfix_dist);
     Ok(out.into_series())
@@ -241,11 +241,11 @@ fn postfix_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn postfix_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String postfix distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, postfix_normalized_dist);
     Ok(out.into_series())
@@ -253,11 +253,11 @@ fn postfix_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=UInt32)]
 fn prefix_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String prefix distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: UInt32Chunked = arity::binary_elementwise_values(x, y, prefix_dist);
     Ok(out.into_series())
@@ -265,11 +265,11 @@ fn prefix_str(inputs: &[Series]) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn prefix_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
-    if inputs[0].dtype() != &DataType::Utf8 || inputs[1].dtype() != &DataType::Utf8 {
+    if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String prefix distance works only on Utf8 types. Please cast to Utf8 first.");
     }
-    let x = inputs[0].utf8()?;
-    let y = inputs[1].utf8()?;
+    let x = inputs[0].str()?;
+    let y = inputs[1].str()?;
 
     let out: Float64Chunked = arity::binary_elementwise_values(x, y, prefix_normalized_dist);
     Ok(out.into_series())

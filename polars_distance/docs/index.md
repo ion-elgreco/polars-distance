@@ -5,7 +5,7 @@ This is the documentation for the `polars-distance` plugin. This plugin provides
 
 
 ## Installation
-The `polars-distance` pluygin can be installed via pip for Python.
+The `polars-distance` plugin can be installed via pip for Python.
 
 ### Install polars-distance for Python
 

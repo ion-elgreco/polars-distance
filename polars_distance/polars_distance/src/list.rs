@@ -1,7 +1,7 @@
 use core::hash::Hash;
 use polars::prelude::arity::binary_elementwise;
 use polars::prelude::*;
-use polars_arrow::array::{PrimitiveArray, Utf8Array};
+use polars_arrow::array::{PrimitiveArray, Utf8ViewArray};
 use polars_arrow::types::NativeType;
 use polars_core::with_match_physical_integer_type;
 
@@ -13,7 +13,7 @@ fn jacc_int_array<T: NativeType + Hash + Eq>(a: &PrimitiveArray<T>, b: &Primitiv
     len_intersect as f64 / (s1.len() + s2.len() - len_intersect) as f64
 }
 
-fn jacc_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
+fn jacc_str_array(a: &Utf8ViewArray, b: &Utf8ViewArray) -> f64 {
     let s1 = a.into_iter().collect::<PlHashSet<_>>();
     let s2 = b.into_iter().collect::<PlHashSet<_>>();
     let len_intersect = s1.intersection(&s2).count();
@@ -32,7 +32,7 @@ fn sorensen_int_array<T: NativeType + Hash + Eq>(
     (2 * len_intersect) as f64 / (s1.len() + s2.len()) as f64
 }
 
-fn sorensen_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
+fn sorensen_str_array(a: &Utf8ViewArray, b: &Utf8ViewArray) -> f64 {
     let s1 = a.into_iter().collect::<PlHashSet<_>>();
     let s2 = b.into_iter().collect::<PlHashSet<_>>();
     let len_intersect = s1.intersection(&s2).count();
@@ -51,7 +51,7 @@ fn overlap_int_array<T: NativeType + Hash + Eq>(
     len_intersect as f64 / std::cmp::min(s1.len(), s2.len()) as f64
 }
 
-fn overlap_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
+fn overlap_str_array(a: &Utf8ViewArray, b: &Utf8ViewArray) -> f64 {
     let s1 = a.into_iter().collect::<PlHashSet<_>>();
     let s2 = b.into_iter().collect::<PlHashSet<_>>();
     let len_intersect = s1.intersection(&s2).count();
@@ -70,7 +70,7 @@ fn cosine_int_array<T: NativeType + Hash + Eq>(
     len_intersect as f64 / (s1.len() as f64).sqrt() * (s2.len() as f64).sqrt()
 }
 
-fn cosine_str_array(a: &Utf8Array<i64>, b: &Utf8Array<i64>) -> f64 {
+fn cosine_str_array(a: &Utf8ViewArray, b: &Utf8ViewArray) -> f64 {
     let s1 = a.into_iter().collect::<PlHashSet<_>>();
     let s2 = b.into_iter().collect::<PlHashSet<_>>();
     let len_intersect = s1.intersection(&s2).count();
@@ -96,12 +96,12 @@ pub fn elementwise_int_inp<T: NativeType + Hash + Eq>(
 pub fn elementwise_string_inp(
     a: &ListChunked,
     b: &ListChunked,
-    f: fn(&Utf8Array<i64>, &Utf8Array<i64>) -> f64,
+    f: fn(&Utf8ViewArray, &Utf8ViewArray) -> f64,
 ) -> PolarsResult<Float64Chunked> {
     Ok(binary_elementwise(a, b, |a, b| match (a, b) {
         (Some(a), Some(b)) => {
-            let a = a.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
-            let b = b.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
+            let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+            let b = b.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
             Some(f(a, b))
         }
         _ => None,
@@ -214,8 +214,8 @@ pub fn tversky_index(
             DataType::String => {
                 Ok(binary_elementwise(a, b, |a, b| match (a, b) {
                     (Some(a), Some(b)) => {
-                        let a = a.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
-                        let b = b.as_any().downcast_ref::<Utf8Array<i64>>().unwrap();
+                        let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                        let b = b.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
                         let s1 = a.into_iter().collect::<PlHashSet<_>>();
                         let s2 = b.into_iter().collect::<PlHashSet<_>>();
                         let len_intersect = s1.intersection(&s2).count() as f64;

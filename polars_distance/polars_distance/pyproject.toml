@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "polars-distance"
 requires-python = ">=3.8"
 dependencies = [
-  'polars >= 0.20.3'
+  'polars >= 0.20.6'
 ]
 classifiers = [
   "Programming Language :: Rust",

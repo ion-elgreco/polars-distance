@@ -45,17 +45,9 @@ pub fn jaro_dist(x: &str, y: &str) -> f64 {
     jaro::distance(x.chars(), y.chars())
 }
 
-pub fn jaro_normalized_dist(x: &str, y: &str) -> f64 {
-    jaro::normalized_distance(x.chars(), y.chars())
-}
-
 // JARO WINKLER
 pub fn jaro_winkler_dist(x: &str, y: &str) -> f64 {
-    jaro_winkler::distance(x.chars(), y.chars()) 
-}
-
-pub fn jaro_winkler_normalized_dist(x: &str, y: &str) -> f64 {
-    jaro_winkler::normalized_distance(x.chars(), y.chars())
+    jaro_winkler::distance(x.chars(), y.chars())
 }
 
 // LONGEST COMMON SUB SEQUENCE

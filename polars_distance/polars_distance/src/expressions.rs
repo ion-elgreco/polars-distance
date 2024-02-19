@@ -131,7 +131,7 @@ fn indel_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     Ok(out.into_series())
 }
 
-#[polars_expr(output_type=UInt32)]
+#[polars_expr(output_type=Float64)]
 fn jaro_str(inputs: &[Series]) -> PolarsResult<Series> {
     if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String jaro distance works only on Utf8 types. Please cast to Utf8 first.");
@@ -139,7 +139,7 @@ fn jaro_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, jaro_dist);
+    let out: Float64Chunked = arity::binary_elementwise_values(x, y, jaro_dist);
     Ok(out.into_series())
 }
 
@@ -155,7 +155,7 @@ fn jaro_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     Ok(out.into_series())
 }
 
-#[polars_expr(output_type=UInt32)]
+#[polars_expr(output_type=Float64)]
 fn jaro_winkler_str(inputs: &[Series]) -> PolarsResult<Series> {
     if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {
         polars_bail!(InvalidOperation: "String jaro winkler distance works only on Utf8 types. Please cast to Utf8 first.");
@@ -163,7 +163,7 @@ fn jaro_winkler_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, jaro_winkler_dist);
+    let out: Float64Chunked = arity::binary_elementwise_values(x, y, jaro_winkler_dist);
     Ok(out.into_series())
 }
 

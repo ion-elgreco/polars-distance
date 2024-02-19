@@ -41,8 +41,8 @@ pub fn indel_normalized_dist(x: &str, y: &str) -> f64 {
 }
 
 // JARO
-pub fn jaro_dist(x: &str, y: &str) -> u32 {
-    jaro::distance(x.chars(), y.chars()) as u32
+pub fn jaro_dist(x: &str, y: &str) -> f64 {
+    jaro::distance(x.chars(), y.chars())
 }
 
 pub fn jaro_normalized_dist(x: &str, y: &str) -> f64 {
@@ -50,8 +50,8 @@ pub fn jaro_normalized_dist(x: &str, y: &str) -> f64 {
 }
 
 // JARO WINKLER
-pub fn jaro_winkler_dist(x: &str, y: &str) -> u32 {
-    jaro_winkler::distance(x.chars(), y.chars()) as u32
+pub fn jaro_winkler_dist(x: &str, y: &str) -> f64 {
+    jaro_winkler::distance(x.chars(), y.chars()) 
 }
 
 pub fn jaro_winkler_normalized_dist(x: &str, y: &str) -> f64 {

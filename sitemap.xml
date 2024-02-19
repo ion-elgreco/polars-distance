@@ -2,32 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://github.com/ion-elgreco/polars-distance/</loc>
-         <lastmod>2024-01-01</lastmod>
+         <lastmod>2024-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://github.com/ion-elgreco/polars-distance/api/array_distance/</loc>
-         <lastmod>2024-01-01</lastmod>
+         <lastmod>2024-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://github.com/ion-elgreco/polars-distance/api/dist/</loc>
-         <lastmod>2024-01-01</lastmod>
+         <lastmod>2024-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://github.com/ion-elgreco/polars-distance/api/list_distance/</loc>
-         <lastmod>2024-01-01</lastmod>
+         <lastmod>2024-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://github.com/ion-elgreco/polars-distance/api/string_distance/</loc>
-         <lastmod>2024-01-01</lastmod>
+         <lastmod>2024-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://github.com/ion-elgreco/polars-distance/usage/</loc>
-         <lastmod>2024-01-01</lastmod>
+         <lastmod>2024-02-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

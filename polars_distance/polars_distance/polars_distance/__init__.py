@@ -212,39 +212,23 @@ class DistancePairWiseString:
                 is_elementwise=True,
             )
 
-    def jaro(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
-        """Returns jaro distance between two expressions"""
-        if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="jaro_normalized_str",
-                is_elementwise=True,
-            )
-        else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="jaro_str",
-                is_elementwise=True,
-            )
+    def jaro(self, other: IntoExpr) -> pl.Expr:
+        """Returns jaro distance between two expressions. Which is normalized by default."""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="jaro_str",
+            is_elementwise=True,
+        )
 
-    def jaro_winkler(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
-        """Returns jaro_winkler distance between two expressions"""
-        if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="jaro_winkler_normalized_str",
-                is_elementwise=True,
-            )
-        else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="jaro_winkler_str",
-                is_elementwise=True,
-            )
+    def jaro_winkler(self, other: IntoExpr) -> pl.Expr:
+        """Returns jaro_winkler distance between two expressions. Which is normalized by default."""
+        return self._expr.register_plugin(
+            lib=lib,
+            args=[other],
+            symbol="jaro_winkler_str",
+            is_elementwise=True,
+        )
 
     def lcs_seq(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns lcs_seq distance between two expressions"""

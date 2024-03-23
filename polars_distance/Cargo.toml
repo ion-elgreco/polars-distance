@@ -14,7 +14,7 @@ polars-arrow = {version = "0.38.3"}
 pyo3 = { version = "0.20.3", features = ["extension-module", "abi3-py38"] }
 pyo3-polars = { version = "0.12", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
-distances = { version = "1.5.1"}
+distances = { version = "1.6.3"}
 rapidfuzz = { version = "0.5.0"}
 
 [target.'cfg(target_os = "linux")'.dependencies]

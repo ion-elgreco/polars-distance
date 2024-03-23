@@ -6,3 +6,5 @@ target/
 rust-toolchain.toml
 *.pyc
 site
+*.abi3.so
+

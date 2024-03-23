@@ -1,0 +1,26 @@
+[package]
+name = "polars_distance"
+version = "0.4.2"
+edition = "2021"
+
+[lib]
+name = "polars_distance"
+crate-type = ["cdylib"]
+
+[dependencies]
+polars = { version = "0.38.3" , features = ["dtype-struct", "dtype-array", 'dtype-categorical', 'dtype-u16', 'dtype-u8', 'dtype-i8','dtype-i16']}
+polars-core = {version = "0.38.3"}
+polars-arrow = {version = "0.38.3"}
+pyo3 = { version = "0.20.3", features = ["extension-module", "abi3-py38"] }
+pyo3-polars = { version = "0.12", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+distances = { version = "1.6.3"}
+rapidfuzz = { version = "0.5.0"}
+
+[target.'cfg(target_os = "linux")'.dependencies]
+jemallocator = { version = "0.5", features = ["disable_initial_exec_tls"] }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"

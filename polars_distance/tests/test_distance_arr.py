@@ -8,7 +8,7 @@ from polars.testing import assert_frame_equal
 def data():
     return pl.DataFrame(
         {
-            "arr": [[1, 2.0, 3.0, 4.0]],
+            "arr": [[1.0, 2.0, 3.0, 4.0]],
             "arr2": [[10.0, 8.0, 5.0, 3.0]],
             "str_l": ["hello world"],
             "str_r": ["hela wrld"],
@@ -258,7 +258,7 @@ def test_haversine(unit, value):
             "y": [{"latitude": 38.897147, "longitude": -77.043934}],
         }
     )
-
+    print(unit)
     result = df.select(pld.col("x").dist.haversine("y", unit=unit).alias("haversine"))
     expected = pl.DataFrame(
         [

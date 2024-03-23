@@ -5,13 +5,21 @@ venv:  ## Set up virtual environment
 	python3 -m venv venv
 	venv/bin/pip install -r requirements.txt
 
-install: venv ## Install polars-hash in develop mode
+install: venv ## Install polars-distance in develop mode
 	unset CONDA_PREFIX && \
-	source venv/bin/activate && maturin develop -m polars_distance/Cargo.toml
+	source venv/bin/activate && maturin develop
 
-install-release: venv ## Install polars-hash in release mode
+install-release: venv ## Install polars-distance in release mode
 	unset CONDA_PREFIX && \
-	source venv/bin/activate && maturin develop --release -m polars_distance/Cargo.toml
+	source venv/bin/activate && maturin develop --release
+
+lint: venv ## Run linter
+	unset CONDA_PREFIX && \
+	source venv/bin/activate && ruff check --fix . && cargo check
+
+format: venv ## Run formatters
+	unset CONDA_PREFIX && \
+	source venv/bin/activate && ruff format . && cargo fmt
 
 clean: ## Clean venv and clean cargo
 	-@rm -r venv

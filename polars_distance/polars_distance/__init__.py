@@ -1,12 +1,10 @@
 from typing import Iterable, Literal, Protocol, cast
 
 import polars as pl
+from pathlib import Path
 from polars.type_aliases import IntoExpr, PolarsDataType
-from polars.utils.udfs import _get_shared_lib_location
-
+from polars.plugins import register_plugin_function
 from ._internal import __version__ as __version__
-
-lib = _get_shared_lib_location(__file__)
 
 
 @pl.api.register_expr_namespace("dist")
@@ -39,11 +37,11 @@ class DistancePairWise:
             └───────────┘
             ```
         """
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
             kwargs={"unit": unit},
-            symbol="haversine_struct",
+            function_name="haversine_struct",
             is_elementwise=True,
         )
 
@@ -55,83 +53,83 @@ class DistancePairWiseArray:
 
     def euclidean(self, other: IntoExpr) -> pl.Expr:
         """Returns euclidean distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="euclidean_arr",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="euclidean_arr",
             is_elementwise=True,
         )
 
     def cosine(self, other: IntoExpr) -> pl.Expr:
         """Returns cosine distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="cosine_arr",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="cosine_arr",
             is_elementwise=True,
         )
 
     def chebyshev(self, other: IntoExpr) -> pl.Expr:
         """Returns chebyshev distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="chebyshev_arr",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="chebyshev_arr",
             is_elementwise=True,
         )
 
     def canberra(self, other: IntoExpr) -> pl.Expr:
         """Returns canberra distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="canberra_arr",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="canberra_arr",
             is_elementwise=True,
         )
 
     def bray_curtis(self, other: IntoExpr) -> pl.Expr:
         """Returns bray_curtis distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="bray_curtis_arr",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="bray_curtis_arr",
             is_elementwise=True,
         )
 
     def manhatten(self, other: IntoExpr) -> pl.Expr:
         """Returns manhatten distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="manhatten_arr",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="manhatten_arr",
             is_elementwise=True,
         )
 
     def minkowski(self, other: IntoExpr, p: int) -> pl.Expr:
         """Returns minkowski distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
             kwargs={"p": p},
-            symbol="minkowski_arr",
+            function_name="minkowski_arr",
             is_elementwise=True,
         )
 
     def l3_norm(self, other: IntoExpr) -> pl.Expr:
         """Returns l3_norm distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="l3_norm_arr",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="l3_norm_arr",
             is_elementwise=True,
         )
 
     def l4_norm(self, other: IntoExpr) -> pl.Expr:
         """Returns l4_norm distance between two vectors"""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="l4_norm_arr",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="l4_norm_arr",
             is_elementwise=True,
         )
 
@@ -147,158 +145,158 @@ class DistancePairWiseString:
         The length of the shortest string is padded to the length of longest string.
         """
         if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="hamming_normalized_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="hamming_normalized_str",
                 is_elementwise=True,
             )
         else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="hamming_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="hamming_str",
                 is_elementwise=True,
             )
 
     def levenshtein(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns levenshtein distance between two expressions"""
         if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="levenshtein_normalized_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="levenshtein_normalized_str",
                 is_elementwise=True,
             )
         else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="levenshtein_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="levenshtein_str",
                 is_elementwise=True,
             )
 
     def damerau_levenshtein(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns damerau levenshtein distance between two expressions"""
         if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="damerau_levenshtein_normalized_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="damerau_levenshtein_normalized_str",
                 is_elementwise=True,
             )
         else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="damerau_levenshtein_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="damerau_levenshtein_str",
                 is_elementwise=True,
             )
 
     def indel(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns indel distance between two expressions"""
         if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="indel_normalized_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="indel_normalized_str",
                 is_elementwise=True,
             )
         else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="indel_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="indel_str",
                 is_elementwise=True,
             )
 
     def jaro(self, other: IntoExpr) -> pl.Expr:
         """Returns jaro distance between two expressions. Which is normalized by default."""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="jaro_str",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="jaro_str",
             is_elementwise=True,
         )
 
     def jaro_winkler(self, other: IntoExpr) -> pl.Expr:
         """Returns jaro_winkler distance between two expressions. Which is normalized by default."""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="jaro_winkler_str",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="jaro_winkler_str",
             is_elementwise=True,
         )
 
     def lcs_seq(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns lcs_seq distance between two expressions"""
         if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="lcs_seq_normalized_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="lcs_seq_normalized_str",
                 is_elementwise=True,
             )
 
         else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="lcs_seq_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="lcs_seq_str",
                 is_elementwise=True,
             )
 
     def osa(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns osa distance between two expressions"""
         if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="osa_normalized_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="osa_normalized_str",
                 is_elementwise=True,
             )
 
         else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="osa_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="osa_str",
                 is_elementwise=True,
             )
 
     def postfix(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns postfix distance between two expressions"""
         if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="postfix_normalized_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="postfix_normalized_str",
                 is_elementwise=True,
             )
 
         else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="postfix_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="postfix_str",
                 is_elementwise=True,
             )
 
     def prefix(self, other: IntoExpr, normalized: bool = False) -> pl.Expr:
         """Returns prefix distance between two expressions"""
         if normalized:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="prefix_normalized_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="prefix_normalized_str",
                 is_elementwise=True,
             )
 
         else:
-            return self._expr.register_plugin(
-                lib=lib,
-                args=[other],
-                symbol="prefix_str",
+            return register_plugin_function(
+                plugin_path=Path(__file__).parent,
+                args=[self._expr, other],
+                function_name="prefix_str",
                 is_elementwise=True,
             )
 
@@ -310,47 +308,47 @@ class DistancePairWiseList:
 
     def jaccard_index(self, other: IntoExpr) -> pl.Expr:
         """Returns jaccard index between two lists. Each list is converted to a set."""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="jaccard_index_list",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="jaccard_index_list",
             is_elementwise=True,
         )
 
     def tversky_index(self, other: IntoExpr, alpha: float, beta: float) -> pl.Expr:
         """Returns tversky index between two lists. Each list is converted to a set."""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
             kwargs={"alpha": alpha, "beta": beta},
-            symbol="tversky_index_list",
+            function_name="tversky_index_list",
             is_elementwise=True,
         )
 
     def sorensen_index(self, other: IntoExpr) -> pl.Expr:
         """Returns sorensen index between two lists. Each list is converted to a set."""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="sorensen_index_list",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="sorensen_index_list",
             is_elementwise=True,
         )
 
     def overlap_coef(self, other: IntoExpr) -> pl.Expr:
         """Returns overlap coef between two lists. Each list is converted to a set."""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="overlap_coef_list",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="overlap_coef_list",
             is_elementwise=True,
         )
 
     def cosine(self, other: IntoExpr) -> pl.Expr:
         """Returns cosine distance between two lists. Each list is converted to a set."""
-        return self._expr.register_plugin(
-            lib=lib,
-            args=[other],
-            symbol="cosine_list",
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="cosine_list",
             is_elementwise=True,
         )
 

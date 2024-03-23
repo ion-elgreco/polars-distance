@@ -2,7 +2,11 @@ use rapidfuzz::distance::*;
 
 // HAMMING
 pub fn hamming_dist(x: &str, y: &str) -> u32 {
-    hamming::distance_with_args(x.chars(), y.chars(), &hamming::Args::default().pad(true)) as u32
+    let result =
+        hamming::distance_with_args(x.chars(), y.chars(), &hamming::Args::default().pad(true))
+            as u32;
+    dbg!(result.clone());
+    result
 }
 
 pub fn hamming_normalized_dist(x: &str, y: &str) -> f64 {

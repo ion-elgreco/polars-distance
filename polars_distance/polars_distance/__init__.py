@@ -305,7 +305,7 @@ class DistancePairWiseString:
         return register_plugin_function(
             plugin_path=Path(__file__).parent,
             args=[self._expr, other],
-            function_name="gestalt_ratio",
+            function_name="gestalt_ratio_str",
             is_elementwise=True,
         )
 

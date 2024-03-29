@@ -271,7 +271,7 @@ def test_haversine(unit, value):
 
 def test_gestalt(data):
     result = data.select(
-        pld.col('str_l').dist_str.gestalt_ratio(pld.col('str_r')).alias('dist_gestalt')
+        pld.col("str_l").dist_str.gestalt_ratio(pld.col("str_r")).alias("dist_gestalt")
     )
 
     expected = pl.DataFrame(

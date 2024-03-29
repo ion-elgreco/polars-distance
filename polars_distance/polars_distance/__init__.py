@@ -299,7 +299,7 @@ class DistancePairWiseString:
                 function_name="prefix_str",
                 is_elementwise=True,
             )
-    
+
     def gestalt_ratio(self, other: IntoExpr) -> pl.Expr:
         """Returns gestalt ratio between two expressions"""
         return register_plugin_function(

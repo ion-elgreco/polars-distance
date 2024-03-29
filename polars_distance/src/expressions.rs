@@ -464,7 +464,6 @@ fn haversine_struct(inputs: &[Series], kwargs: HaversineKwargs) -> PolarsResult<
     })
 }
 
-
 #[polars_expr(output_type=Float64)]
 fn gestalt_ratio_str(inputs: &[Series]) -> PolarsResult<Series> {
     if inputs[0].dtype() != &DataType::String || inputs[1].dtype() != &DataType::String {

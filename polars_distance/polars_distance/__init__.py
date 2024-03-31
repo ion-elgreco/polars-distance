@@ -300,6 +300,15 @@ class DistancePairWiseString:
                 is_elementwise=True,
             )
 
+    def gestalt_ratio(self, other: IntoExpr) -> pl.Expr:
+        """Returns gestalt ratio between two expressions"""
+        return register_plugin_function(
+            plugin_path=Path(__file__).parent,
+            args=[self._expr, other],
+            function_name="gestalt_ratio_str",
+            is_elementwise=True,
+        )
+
 
 @pl.api.register_expr_namespace("dist_list")
 class DistancePairWiseList:

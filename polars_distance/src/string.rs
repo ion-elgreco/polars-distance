@@ -1,4 +1,5 @@
 use rapidfuzz::distance::*;
+use gestalt_ratio::gestalt_ratio as _gestalt_ratio;
 
 // HAMMING
 pub fn hamming_dist(x: &str, y: &str) -> u32 {
@@ -88,4 +89,8 @@ pub fn prefix_dist(x: &str, y: &str) -> u32 {
 
 pub fn prefix_normalized_dist(x: &str, y: &str) -> f64 {
     prefix::normalized_distance(x.chars(), y.chars())
+}
+
+pub fn gestalt_ratio(x: &str, y: &str) -> f64 {
+    _gestalt_ratio(x, y)
 }

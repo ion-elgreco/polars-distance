@@ -1,6 +1,4 @@
-Hellooo :)
-
-This plugin is a work-in progress, main goal is to provide distance metrics on list, arrays and string datatypes.
+This plugin provides distance metrics on list, arrays and string datatypes in polars.
 
 The docs can be found here: https://ion-elgreco.github.io/polars-distance/
 

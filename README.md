@@ -5,7 +5,7 @@ The docs can be found here: https://ion-elgreco.github.io/polars-distance/
 ## Examples
 
 ```python
-import polars
+import polars as pl
 import polars_distance as pld
 
 df = pl.DataFrame({

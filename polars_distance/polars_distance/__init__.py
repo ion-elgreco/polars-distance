@@ -2,7 +2,7 @@ from typing import Iterable, Literal, Protocol, cast
 
 import polars as pl
 from pathlib import Path
-from polars.type_aliases import IntoExpr, PolarsDataType
+from polars._typing import IntoExpr, PolarsDataType   # This should be changed to polars.typing once that package has been released. For now, using the temporary internal package as advised by Polars.
 from polars.plugins import register_plugin_function
 from ._internal import __version__ as __version__
 

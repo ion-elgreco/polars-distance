@@ -4,10 +4,14 @@ from typing import Iterable, Literal, Protocol, cast
 
 import polars as pl
 from pathlib import Path
-from polars.type_aliases import IntoExpr, PolarsDataType
 from polars.plugins import register_plugin_function
 from ._internal import __version__ as __version__
 
+# Import typing - this will eventually move to polars.typing, but currently we use the internal package and fallback to the old package for older versions of Polars.
+try:
+    from polars._typing import IntoExpr, PolarsDataType
+except ImportError:
+    from polars.type_aliases import IntoExpr, PolarsDataType  # type: ignore[no-redef]
 
 @pl.api.register_expr_namespace("dist")
 class DistancePairWise:

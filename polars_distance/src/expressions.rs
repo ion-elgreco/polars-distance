@@ -6,11 +6,11 @@ use crate::list::{
 };
 use crate::other_dist::haversine_dist;
 use crate::string::{
-    dam_levenshtein_dist, dam_levenshtein_normalized_dist, hamming_dist, hamming_normalized_dist,
-    indel_dist, indel_normalized_dist, jaro_dist, jaro_winkler_dist, lcs_seq_dist,
-    lcs_seq_normalized_dist, levenshtein_dist, levenshtein_normalized_dist, osa_dist,
+    dam_levenshtein_dist, dam_levenshtein_normalized_dist, gestalt_ratio, hamming_dist,
+    hamming_normalized_dist, indel_dist, indel_normalized_dist, jaro_dist, jaro_winkler_dist,
+    lcs_seq_dist, lcs_seq_normalized_dist, levenshtein_dist, levenshtein_normalized_dist, osa_dist,
     osa_normalized_dist, postfix_dist, postfix_normalized_dist, prefix_dist,
-    prefix_normalized_dist, gestalt_ratio
+    prefix_normalized_dist,
 };
 use distances::vectors::{bray_curtis, canberra, chebyshev, l3_norm, l4_norm, manhattan};
 use polars::prelude::*;

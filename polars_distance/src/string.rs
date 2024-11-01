@@ -1,5 +1,5 @@
-use rapidfuzz::distance::*;
 use gestalt_ratio::gestalt_ratio as _gestalt_ratio;
+use rapidfuzz::distance::*;
 
 // HAMMING
 pub fn hamming_dist(x: &str, y: &str) -> u32 {

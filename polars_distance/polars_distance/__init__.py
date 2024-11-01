@@ -13,6 +13,7 @@ try:
 except ImportError:
     from polars.type_aliases import IntoExpr, PolarsDataType  # type: ignore[no-redef]
 
+
 @pl.api.register_expr_namespace("dist")
 class DistancePairWise:
     def __init__(self, expr: pl.Expr):

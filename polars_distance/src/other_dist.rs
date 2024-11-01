@@ -50,5 +50,5 @@ where
         })
         .collect();
 
-    Ok(out.with_name("haversine"))
+    Ok(out.with_name("haversine".into()))
 }

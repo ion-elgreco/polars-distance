@@ -1,7 +1,8 @@
 use core::hash::Hash;
-use polars::prelude::arity::binary_elementwise;
+use polars::prelude::arity::{binary_elementwise, unary_elementwise};
 use polars::prelude::*;
-use polars_arrow::array::{PrimitiveArray, Utf8ViewArray};
+use polars_arrow::array::{new_null_array, PrimitiveArray, Utf8ViewArray};
+use polars_arrow::datatypes::ArrowDataType;
 use polars_arrow::types::NativeType;
 use polars_core::with_match_physical_integer_type;
 
@@ -98,14 +99,38 @@ pub fn elementwise_string_inp(
     b: &ListChunked,
     f: fn(&Utf8ViewArray, &Utf8ViewArray) -> f64,
 ) -> PolarsResult<Float64Chunked> {
-    Ok(binary_elementwise(a, b, |a, b| match (a, b) {
-        (Some(a), Some(b)) => {
-            let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
-            let b = b.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
-            Some(f(a, b))
+    let out = match b.len() {
+        1 => match unsafe { b.get_unchecked(0) } {
+            Some(b_value) => {
+                dbg!(b_value.clone());
+                println!("im here!");
+                let b_value = b_value.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                unary_elementwise(a, |a | match a {
+                    Some(a) => {
+                        let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                        Some(f(a,b_value))
+                    },
+                    _ => None
+                }
+            
+            )
+            },
+            None => new_null_array(ArrowDataType::Float64, a.len())
+                .as_any()
+                .downcast_ref::<Float64Chunked>()
+                .unwrap()
+                .clone()
         }
-        _ => None,
-    }))
+        _ => binary_elementwise(a, b, |a, b| match (a, b) {
+            (Some(a), Some(b)) => {
+                let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                let b = b.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                Some(f(a, b))
+            }
+            _ => None,
+        })
+    };
+    Ok(out)
 }
 
 pub fn jaccard_index(a: &ListChunked, b: &ListChunked) -> PolarsResult<Float64Chunked> {

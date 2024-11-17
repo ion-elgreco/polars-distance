@@ -329,3 +329,33 @@ def test_tversky_null():
         ]
     )
     assert_frame_equal(result, expected)
+
+
+def test_broadcast():
+    df = pl.DataFrame(
+        {
+            "x": [
+                {"latitude": 38.898556, "longitude": -77.037852},
+                {"latitude": 12.1, "longitude": -55.1},
+            ],
+        }
+    )
+    result = df.select(
+        pld.col("x")
+        .dist.haversine(
+            pl.lit(
+                {"latitude": 52.3, "longitude": 12.45},
+                dtype=pl.Struct({"latitude": pl.Float64, "longitude": pl.Float64}),
+            ),
+            unit="km",
+        )
+        .alias("haversine")
+    )
+    expected = pl.DataFrame(
+        [
+            pl.Series(
+                "haversine", [6663.617141243698, 7426.0664022744795], dtype=pl.Float64
+            ),
+        ]
+    )
+    assert_frame_equal(result, expected)

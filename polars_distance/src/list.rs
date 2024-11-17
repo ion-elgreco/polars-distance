@@ -84,6 +84,9 @@ pub fn elementwise_int_inp<T: NativeType + Hash + Eq>(
     b: &ListChunked,
     f: fn(&PrimitiveArray<T>, &PrimitiveArray<T>) -> f64,
 ) -> PolarsResult<Float64Chunked> {
+    // If one side is a literal it will be shorter but is moved to RHS so we can use unsafe access
+    let (a, b) = if a.len() < b.len() { (b, a) } else { (a, b) };
+
     let out = match b.len() {
         1 => match unsafe { b.get_unchecked(0) } {
             Some(b_value) => {
@@ -122,6 +125,9 @@ pub fn elementwise_string_inp(
     b: &ListChunked,
     f: fn(&Utf8ViewArray, &Utf8ViewArray) -> f64,
 ) -> PolarsResult<Float64Chunked> {
+    // If one side is a literal it will be shorter but is moved to RHS so we can use unsafe access
+    let (a, b) = if a.len() < b.len() { (b, a) } else { (a, b) };
+
     let out = match b.len() {
         1 => match unsafe { b.get_unchecked(0) } {
             Some(b_value) => {
@@ -224,6 +230,19 @@ pub fn cosine_set_distance(a: &ListChunked, b: &ListChunked) -> PolarsResult<Flo
     }
 }
 
+fn tversky_helper<T, I>(a: T, b: T, alpha: f64, beta: f64) -> f64
+where
+    T: IntoIterator<Item = I>,
+    I: Eq + Hash,
+{
+    let s1 = a.into_iter().collect::<PlHashSet<_>>();
+    let s2 = b.into_iter().collect::<PlHashSet<_>>();
+    let len_intersect = s1.intersection(&s2).count() as f64;
+    let len_diff1 = s1.difference(&s2).count();
+    let len_diff2 = s2.difference(&s1).count();
+    len_intersect / (len_intersect + (alpha * len_diff1 as f64) + (beta * len_diff2 as f64))
+}
+
 pub fn tversky_index(
     a: &ListChunked,
     b: &ListChunked,
@@ -235,40 +254,71 @@ pub fn tversky_index(
         ComputeError: "inner data types don't match"
     );
 
+    // If one side is a literal it will be shorter but is moved to RHS so we can use unsafe access
+    let (a, b) = if a.len() < b.len() { (b, a) } else { (a, b) };
+
     if a.inner_dtype().is_integer() {
         with_match_physical_integer_type!(a.inner_dtype(), |$T| {
-            Ok(binary_elementwise(a, b, |a, b| match (a, b) {
-                (Some(a), Some(b)) => {
-                    let a = a.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
-                    let b = b.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
-                    let s1 = a.into_iter().collect::<PlHashSet<_>>();
-                    let s2 = b.into_iter().collect::<PlHashSet<_>>();
-                    let len_intersect = s1.intersection(&s2).count() as f64;
-                    let len_diff1 = s1.difference(&s2).count();
-                    let len_diff2 = s2.difference(&s1).count();
-
-                    Some(len_intersect / (len_intersect +  (alpha * len_diff1 as f64) + (beta * len_diff2 as f64)))
-                }
-                _ => None,
-            }))
-
+            let out = match b.len() {
+                1 => match unsafe { b.get_unchecked(0) } {
+                    Some(b_value) => {
+                        let b_value = b_value.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
+                        unary_elementwise(a, |a| match a {
+                            Some(a) => {
+                                let a = a.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
+                                Some(tversky_helper(a, b_value, alpha, beta))
+                            }
+                            _ => None,
+                        })
+                    }
+                    None => new_null_array(ArrowDataType::Float64, a.len())
+                        .as_any()
+                        .downcast_ref::<Float64Chunked>()
+                        .unwrap()
+                        .clone(),
+                },
+                _ => binary_elementwise(a, b, |a, b| match (a, b) {
+                    (Some(a), Some(b)) => {
+                        let a = a.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
+                        let b = b.as_any().downcast_ref::<PrimitiveArray<$T>>().unwrap();
+                        Some(tversky_helper(a, b, alpha, beta))
+                    }
+                    _ => None,
+                }),
+            };
+            Ok(out)
         })
     } else {
         match a.inner_dtype() {
             DataType::String => {
-                Ok(binary_elementwise(a, b, |a, b| match (a, b) {
-                    (Some(a), Some(b)) => {
-                        let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
-                        let b = b.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
-                        let s1 = a.into_iter().collect::<PlHashSet<_>>();
-                        let s2 = b.into_iter().collect::<PlHashSet<_>>();
-                        let len_intersect = s1.intersection(&s2).count() as f64;
-                        let len_diff1 = s1.difference(&s2).count();
-                        let len_diff2 = s2.difference(&s1).count();
-                        Some(len_intersect / (len_intersect +  (alpha * len_diff1 as f64) + (beta * len_diff2 as f64)))
-                    }
-                    _ => None,
-                }))
+                let out = match b.len() {
+                    1 => match unsafe { b.get_unchecked(0) } {
+                        Some(b_value) => {
+                            let b_value = b_value.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                            unary_elementwise(a, |a| match a {
+                                Some(a) => {
+                                    let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                                    Some(tversky_helper(a, b_value, alpha, beta))
+                                }
+                                _ => None,
+                            })
+                        }
+                        None => new_null_array(ArrowDataType::Float64, a.len())
+                            .as_any()
+                            .downcast_ref::<Float64Chunked>()
+                            .unwrap()
+                            .clone(),
+                    },
+                    _ => binary_elementwise(a, b, |a, b| match (a, b) {
+                        (Some(a), Some(b)) => {
+                            let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                            let b = b.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
+                            Some(tversky_helper(a, b, alpha, beta))
+                        }
+                        _ => None,
+                    }),
+                };
+                Ok(out)
             },
             _ => Err(PolarsError::ComputeError(
                 format!("tversky index distance only works on inner dtype Utf8 and integer. Use of {} is not supported", a.inner_dtype()).into(),

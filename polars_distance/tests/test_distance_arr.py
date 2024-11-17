@@ -281,3 +281,51 @@ def test_gestalt(data):
     )
 
     assert_frame_equal(result, expected)
+
+
+def test_haversine_null():
+    df = pl.DataFrame(
+        {
+            "x": [
+                {"latitude": 38.898556, "longitude": -77.037852},
+                {"latitude": 38.898556, "longitude": -77.037852},
+            ],
+        }
+    )
+    result = df.select(
+        pld.col("x")
+        .dist.haversine(
+            pl.lit(
+                {"latitude": None, "longitude": None},
+                dtype=pl.Struct({"latitude": pl.Float64, "longitude": pl.Float64}),
+            ),
+            unit="km",
+        )
+        .alias("haversine")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("haversine", [None, None], dtype=pl.Float64),
+        ]
+    )
+    assert_frame_equal(result, expected)
+
+
+def test_tversky_null():
+    df_test = pl.DataFrame(
+        {
+            "a1": [[1, 2], [1, 2, 3]],
+        }
+    )
+    result = df_test.select(
+        d=pld.col("a1").dist_list.tversky_index(
+            pl.lit(None, dtype=pl.List(pl.Int64)), 0, 1
+        )
+    )
+    expected = pl.DataFrame(
+        [
+            pl.Series("d", [None, None], dtype=pl.Float64),
+        ]
+    )
+    assert_frame_equal(result, expected)

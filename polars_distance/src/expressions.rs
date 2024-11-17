@@ -14,7 +14,7 @@ use crate::string::{
 };
 use distances::vectors::{bray_curtis, canberra, chebyshev, l3_norm, l4_norm, manhattan};
 use polars::prelude::*;
-use polars_arrow::array::{new_null_array, Utf8ViewArray};
+use polars_arrow::array::new_null_array;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 

@@ -14,8 +14,8 @@ def data():
             "str_r": ["hela wrld"],
         },
         schema={
-            "arr": pl.Array(inner=pl.Float64, width=4),
-            "arr2": pl.Array(inner=pl.Float64, width=4),
+            "arr": pl.Array(inner=pl.Float64, shape=4),
+            "arr2": pl.Array(inner=pl.Float64, shape=4),
             "str_l": pl.Utf8,
             "str_r": pl.Utf8,
         },

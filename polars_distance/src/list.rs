@@ -94,12 +94,13 @@ pub fn elementwise_int_inp<T: NativeType + Hash + Eq>(
                     .as_any()
                     .downcast_ref::<PrimitiveArray<T>>()
                     .unwrap();
-                unary_elementwise(a, |a| match a {
-                    Some(a) => {
-                        let a = a.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
-                        Some(f(a, b_value))
-                    }
-                    _ => None,
+                unary_elementwise(a, |a| {
+                    a.map(|a| {
+                        f(
+                            a.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap(),
+                            b_value,
+                        )
+                    })
                 })
             }
             None => new_null_array(ArrowDataType::Float64, a.len())
@@ -132,12 +133,8 @@ pub fn elementwise_string_inp(
         1 => match unsafe { b.get_unchecked(0) } {
             Some(b_value) => {
                 let b_value = b_value.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
-                unary_elementwise(a, |a| match a {
-                    Some(a) => {
-                        let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
-                        Some(f(a, b_value))
-                    }
-                    _ => None,
+                unary_elementwise(a, |a| {
+                    a.map(|a| f(a.as_any().downcast_ref::<Utf8ViewArray>().unwrap(), b_value))
                 })
             }
             None => new_null_array(ArrowDataType::Float64, a.len())

@@ -39,7 +39,7 @@ fn elementwise_str_u32(
     y: &ChunkedArray<StringType>,
     f: fn(&str, &str) -> u32,
 ) -> UInt32Chunked {
-    let (x, y) = if x.len() < y.len() { (x, y) } else { (y, x) };
+    let (x, y) = if x.len() < y.len() { (y, x) } else { (x, y) };
     match y.len() {
         1 => match unsafe { y.get_unchecked(0) } {
             Some(y_value) => arity::unary_elementwise(x, |x| x.map(|x| f(x, y_value))),
@@ -59,7 +59,7 @@ fn elementwise_str_f64(
     y: &ChunkedArray<StringType>,
     f: fn(&str, &str) -> f64,
 ) -> Float64Chunked {
-    let (x, y) = if x.len() < y.len() { (x, y) } else { (y, x) };
+    let (x, y) = if x.len() < y.len() { (y, x) } else { (x, y) };
     match y.len() {
         1 => match unsafe { y.get_unchecked(0) } {
             Some(y_value) => arity::unary_elementwise(x, |x| x.map(|x| f(x, y_value))),

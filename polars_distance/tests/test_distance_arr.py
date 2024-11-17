@@ -359,3 +359,16 @@ def test_broadcast():
         ]
     )
     assert_frame_equal(result, expected)
+
+    df = pl.DataFrame(
+        {
+            "a1": ["test1", "hello", "test1", "hello", "test1", "hello"],
+        }
+    )
+    result = df.select(d=pld.col("a1").dist_str.levenshtein(pl.lit("testaa")))
+    expected = pl.DataFrame(
+        [
+            pl.Series("d", [2, 5, 2, 5, 2, 5], dtype=pl.UInt32),
+        ]
+    )
+    assert_frame_equal(result, expected)

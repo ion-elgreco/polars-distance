@@ -1,5 +1,7 @@
+use arity::binary_elementwise;
 use polars::export::num::Float;
 use polars::prelude::*;
+use polars_arrow::array::new_null_array;
 
 fn haversine_elementwise<T: Float>(x_lat: T, x_long: T, y_lat: T, y_long: T, radius: f64) -> T {
     let radius = T::from(radius).unwrap();
@@ -23,6 +25,7 @@ pub fn haversine_dist<T>(
     y_lat: &ChunkedArray<T>,
     y_long: &ChunkedArray<T>,
     unit: String,
+    arrow_dtype: ArrowDataType,
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
@@ -36,19 +39,46 @@ where
         }
     };
 
-    let out: ChunkedArray<T> = x_lat
-        .into_iter()
-        .zip(x_long.into_iter())
-        .zip(y_lat.into_iter())
-        .zip(y_long.into_iter())
-        .map(|(((x_lat, x_long), y_lat), y_long)| {
-            let x_lat = x_lat?;
-            let x_long = x_long?;
-            let y_lat = y_lat?;
-            let y_long = y_long?;
-            Some(haversine_elementwise(x_lat, x_long, y_lat, y_long, radius))
-        })
-        .collect();
+    let (x_lat, x_long, y_lat, y_long) = if x_lat.len() < y_lat.len() {
+        (y_lat, y_long, x_lat, x_long)
+    } else {
+        (x_lat, x_long, y_lat, y_long)
+    };
 
+    let out: ChunkedArray<T> = match y_lat.len() {
+        1 => match unsafe { (y_lat.get_unchecked(0), y_long.get_unchecked(0)) } {
+            (Some(y_lat_value), Some(y_long_value)) => {
+                binary_elementwise(x_lat, x_long, |a, b| match (a, b) {
+                    (Some(x_lat), Some(x_long)) => Some(haversine_elementwise(
+                        x_lat,
+                        x_long,
+                        y_lat_value,
+                        y_long_value,
+                        radius,
+                    )),
+                    _ => None,
+                })
+            }
+            (_, _) => unsafe {
+                ChunkedArray::from_chunks(
+                    x_lat.name().clone(),
+                    vec![new_null_array(arrow_dtype, x_lat.len())],
+                )
+            },
+        },
+        _ => x_lat
+            .into_iter()
+            .zip(x_long.into_iter())
+            .zip(y_lat.into_iter())
+            .zip(y_long.into_iter())
+            .map(|(((x_lat, x_long), y_lat), y_long)| {
+                let x_lat = x_lat?;
+                let x_long = x_long?;
+                let y_lat = y_lat?;
+                let y_long = y_long?;
+                Some(haversine_elementwise(x_lat, x_long, y_lat, y_long, radius))
+            })
+            .collect(),
+    };
     Ok(out.with_name("haversine".into()))
 }

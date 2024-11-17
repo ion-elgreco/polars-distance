@@ -14,6 +14,7 @@ use crate::string::{
 };
 use distances::vectors::{bray_curtis, canberra, chebyshev, l3_norm, l4_norm, manhattan};
 use polars::prelude::*;
+use polars_arrow::array::new_null_array;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 
@@ -33,6 +34,46 @@ struct HaversineKwargs {
     unit: String,
 }
 
+fn elementwise_str_u32(
+    x: &ChunkedArray<StringType>,
+    y: &ChunkedArray<StringType>,
+    f: fn(&str, &str) -> u32,
+) -> UInt32Chunked {
+    let (x, y) = if x.len() < y.len() { (y, x) } else { (x, y) };
+    match y.len() {
+        1 => match unsafe { y.get_unchecked(0) } {
+            Some(y_value) => arity::unary_elementwise(x, |x| x.map(|x| f(x, y_value))),
+            None => unsafe {
+                ChunkedArray::from_chunks(
+                    x.name().clone(),
+                    vec![new_null_array(ArrowDataType::UInt32, x.len())],
+                )
+            },
+        },
+        _ => arity::binary_elementwise_values(x, y, f),
+    }
+}
+
+fn elementwise_str_f64(
+    x: &ChunkedArray<StringType>,
+    y: &ChunkedArray<StringType>,
+    f: fn(&str, &str) -> f64,
+) -> Float64Chunked {
+    let (x, y) = if x.len() < y.len() { (y, x) } else { (x, y) };
+    match y.len() {
+        1 => match unsafe { y.get_unchecked(0) } {
+            Some(y_value) => arity::unary_elementwise(x, |x| x.map(|x| f(x, y_value))),
+            None => unsafe {
+                ChunkedArray::from_chunks(
+                    x.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, x.len())],
+                )
+            },
+        },
+        _ => arity::binary_elementwise_values(x, y, f),
+    }
+}
+
 // STR EXPRESSIONS
 #[polars_expr(output_type=UInt32)]
 fn hamming_str(inputs: &[Series]) -> PolarsResult<Series> {
@@ -42,8 +83,7 @@ fn hamming_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, hamming_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_u32(x, y, hamming_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -54,8 +94,8 @@ fn hamming_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, hamming_normalized_dist);
-    Ok(out.into_series())
+    // If one side is a literal it will be shorter but is moved to RHS so we can use unsafe access
+    Ok(elementwise_str_f64(x, y, hamming_normalized_dist).into_series())
 }
 
 #[polars_expr(output_type=UInt32)]
@@ -66,8 +106,7 @@ fn levenshtein_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, levenshtein_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_u32(x, y, levenshtein_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -78,8 +117,7 @@ fn levenshtein_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, levenshtein_normalized_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, levenshtein_normalized_dist).into_series())
 }
 
 #[polars_expr(output_type=UInt32)]
@@ -90,8 +128,7 @@ fn damerau_levenshtein_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, dam_levenshtein_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_u32(x, y, dam_levenshtein_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -102,9 +139,7 @@ fn damerau_levenshtein_normalized_str(inputs: &[Series]) -> PolarsResult<Series>
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked =
-        arity::binary_elementwise_values(x, y, dam_levenshtein_normalized_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, dam_levenshtein_normalized_dist).into_series())
 }
 
 #[polars_expr(output_type=UInt32)]
@@ -115,8 +150,7 @@ fn indel_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, indel_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_u32(x, y, indel_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -127,8 +161,7 @@ fn indel_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, indel_normalized_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, indel_normalized_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -139,8 +172,7 @@ fn jaro_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, jaro_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, jaro_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -151,8 +183,7 @@ fn jaro_winkler_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, jaro_winkler_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, jaro_winkler_dist).into_series())
 }
 
 #[polars_expr(output_type=UInt32)]
@@ -163,8 +194,7 @@ fn lcs_seq_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, lcs_seq_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_u32(x, y, lcs_seq_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -175,8 +205,7 @@ fn lcs_seq_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, lcs_seq_normalized_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, lcs_seq_normalized_dist).into_series())
 }
 
 #[polars_expr(output_type=UInt32)]
@@ -187,8 +216,7 @@ fn osa_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, osa_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_u32(x, y, osa_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -199,8 +227,7 @@ fn osa_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, osa_normalized_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, osa_normalized_dist).into_series())
 }
 
 #[polars_expr(output_type=UInt32)]
@@ -211,8 +238,7 @@ fn postfix_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, postfix_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_u32(x, y, postfix_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -223,8 +249,7 @@ fn postfix_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, postfix_normalized_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, postfix_normalized_dist).into_series())
 }
 
 #[polars_expr(output_type=UInt32)]
@@ -235,8 +260,7 @@ fn prefix_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: UInt32Chunked = arity::binary_elementwise_values(x, y, prefix_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_u32(x, y, prefix_dist).into_series())
 }
 
 #[polars_expr(output_type=Float64)]
@@ -247,8 +271,7 @@ fn prefix_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, prefix_normalized_dist);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, prefix_normalized_dist).into_series())
 }
 
 // ARRAY EXPRESSIONS
@@ -451,14 +474,30 @@ fn haversine_struct(inputs: &[Series], kwargs: HaversineKwargs) -> PolarsResult<
             let x_long = x_long.f32().unwrap();
             let y_lat = y_lat.f32().unwrap();
             let y_long = y_long.f32().unwrap();
-            haversine_dist(x_lat, x_long, y_lat, y_long, kwargs.unit)?.into_series()
+            haversine_dist(
+                x_lat,
+                x_long,
+                y_lat,
+                y_long,
+                kwargs.unit,
+                ArrowDataType::Float32,
+            )?
+            .into_series()
         }
         DataType::Float64 => {
             let x_lat = x_lat.f64().unwrap();
             let x_long = x_long.f64().unwrap();
             let y_lat = y_lat.f64().unwrap();
             let y_long = y_long.f64().unwrap();
-            haversine_dist(x_lat, x_long, y_lat, y_long, kwargs.unit)?.into_series()
+            haversine_dist(
+                x_lat,
+                x_long,
+                y_lat,
+                y_long,
+                kwargs.unit,
+                ArrowDataType::Float64,
+            )?
+            .into_series()
         }
         _ => unimplemented!(),
     })
@@ -472,6 +511,5 @@ fn gestalt_ratio_str(inputs: &[Series]) -> PolarsResult<Series> {
     let x = inputs[0].str()?;
     let y = inputs[1].str()?;
 
-    let out: Float64Chunked = arity::binary_elementwise_values(x, y, gestalt_ratio);
-    Ok(out.into_series())
+    Ok(elementwise_str_f64(x, y, gestalt_ratio).into_series())
 }

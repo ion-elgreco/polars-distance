@@ -14,8 +14,8 @@ def data():
             "str_r": ["hela wrld"],
         },
         schema={
-            "arr": pl.Array(inner=pl.Float64, width=4),
-            "arr2": pl.Array(inner=pl.Float64, width=4),
+            "arr": pl.Array(inner=pl.Float64, shape=4),
+            "arr2": pl.Array(inner=pl.Float64, shape=4),
             "str_l": pl.Utf8,
             "str_r": pl.Utf8,
         },
@@ -280,4 +280,95 @@ def test_gestalt(data):
         ]
     )
 
+    assert_frame_equal(result, expected)
+
+
+def test_haversine_null():
+    df = pl.DataFrame(
+        {
+            "x": [
+                {"latitude": 38.898556, "longitude": -77.037852},
+                {"latitude": 38.898556, "longitude": -77.037852},
+            ],
+        }
+    )
+    result = df.select(
+        pld.col("x")
+        .dist.haversine(
+            pl.lit(
+                {"latitude": None, "longitude": None},
+                dtype=pl.Struct({"latitude": pl.Float64, "longitude": pl.Float64}),
+            ),
+            unit="km",
+        )
+        .alias("haversine")
+    )
+
+    expected = pl.DataFrame(
+        [
+            pl.Series("haversine", [None, None], dtype=pl.Float64),
+        ]
+    )
+    assert_frame_equal(result, expected)
+
+
+def test_tversky_null():
+    df_test = pl.DataFrame(
+        {
+            "a1": [[1, 2], [1, 2, 3]],
+        }
+    )
+    result = df_test.select(
+        d=pld.col("a1").dist_list.tversky_index(
+            pl.lit(None, dtype=pl.List(pl.Int64)), 0, 1
+        )
+    )
+    expected = pl.DataFrame(
+        [
+            pl.Series("d", [None, None], dtype=pl.Float64),
+        ]
+    )
+    assert_frame_equal(result, expected)
+
+
+def test_broadcast():
+    df = pl.DataFrame(
+        {
+            "x": [
+                {"latitude": 38.898556, "longitude": -77.037852},
+                {"latitude": 12.1, "longitude": -55.1},
+            ],
+        }
+    )
+    result = df.select(
+        pld.col("x")
+        .dist.haversine(
+            pl.lit(
+                {"latitude": 52.3, "longitude": 12.45},
+                dtype=pl.Struct({"latitude": pl.Float64, "longitude": pl.Float64}),
+            ),
+            unit="km",
+        )
+        .alias("haversine")
+    )
+    expected = pl.DataFrame(
+        [
+            pl.Series(
+                "haversine", [6663.617141243698, 7426.0664022744795], dtype=pl.Float64
+            ),
+        ]
+    )
+    assert_frame_equal(result, expected)
+
+    df = pl.DataFrame(
+        {
+            "a1": ["test1", "hello", "test1", "hello", "test1", "hello"],
+        }
+    )
+    result = df.select(d=pld.col("a1").dist_str.levenshtein(pl.lit("testaa")))
+    expected = pl.DataFrame(
+        [
+            pl.Series("d", [2, 5, 2, 5, 2, 5], dtype=pl.UInt32),
+        ]
+    )
     assert_frame_equal(result, expected)

@@ -84,14 +84,37 @@ pub fn elementwise_int_inp<T: NativeType + Hash + Eq>(
     b: &ListChunked,
     f: fn(&PrimitiveArray<T>, &PrimitiveArray<T>) -> f64,
 ) -> PolarsResult<Float64Chunked> {
-    Ok(binary_elementwise(a, b, |a, b| match (a, b) {
-        (Some(a), Some(b)) => {
-            let a = a.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
-            let b = b.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
-            Some(f(a, b))
-        }
-        _ => None,
-    }))
+    let out = match b.len() {
+        1 => match unsafe { b.get_unchecked(0) } {
+            Some(b_value) => {
+                let b_value = b_value
+                    .as_any()
+                    .downcast_ref::<PrimitiveArray<T>>()
+                    .unwrap();
+                unary_elementwise(a, |a| match a {
+                    Some(a) => {
+                        let a = a.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
+                        Some(f(a, b_value))
+                    }
+                    _ => None,
+                })
+            }
+            None => new_null_array(ArrowDataType::Float64, a.len())
+                .as_any()
+                .downcast_ref::<Float64Chunked>()
+                .unwrap()
+                .clone(),
+        },
+        _ => binary_elementwise(a, b, |a, b| match (a, b) {
+            (Some(a), Some(b)) => {
+                let a = a.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
+                let b = b.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
+                Some(f(a, b))
+            }
+            _ => None,
+        }),
+    };
+    Ok(out)
 }
 
 pub fn elementwise_string_inp(
@@ -102,25 +125,21 @@ pub fn elementwise_string_inp(
     let out = match b.len() {
         1 => match unsafe { b.get_unchecked(0) } {
             Some(b_value) => {
-                dbg!(b_value.clone());
-                println!("im here!");
                 let b_value = b_value.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
-                unary_elementwise(a, |a | match a {
+                unary_elementwise(a, |a| match a {
                     Some(a) => {
                         let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
-                        Some(f(a,b_value))
-                    },
-                    _ => None
-                }
-            
-            )
-            },
+                        Some(f(a, b_value))
+                    }
+                    _ => None,
+                })
+            }
             None => new_null_array(ArrowDataType::Float64, a.len())
                 .as_any()
                 .downcast_ref::<Float64Chunked>()
                 .unwrap()
-                .clone()
-        }
+                .clone(),
+        },
         _ => binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {
                 let a = a.as_any().downcast_ref::<Utf8ViewArray>().unwrap();
@@ -128,7 +147,7 @@ pub fn elementwise_string_inp(
                 Some(f(a, b))
             }
             _ => None,
-        })
+        }),
     };
     Ok(out)
 }

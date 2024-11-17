@@ -43,11 +43,12 @@ fn elementwise_str_u32(
     match y.len() {
         1 => match unsafe { y.get_unchecked(0) } {
             Some(y_value) => arity::unary_elementwise(x, |x| x.map(|x| f(x, y_value))),
-            None => new_null_array(ArrowDataType::UInt32, x.len())
-                .as_any()
-                .downcast_ref::<UInt32Chunked>()
-                .unwrap()
-                .clone(),
+            None => unsafe {
+                ChunkedArray::from_chunks(
+                    x.name().clone(),
+                    vec![new_null_array(ArrowDataType::UInt32, x.len())],
+                )
+            },
         },
         _ => arity::binary_elementwise_values(x, y, f),
     }
@@ -62,11 +63,12 @@ fn elementwise_str_f64(
     match y.len() {
         1 => match unsafe { y.get_unchecked(0) } {
             Some(y_value) => arity::unary_elementwise(x, |x| x.map(|x| f(x, y_value))),
-            None => new_null_array(ArrowDataType::Float64, x.len())
-                .as_any()
-                .downcast_ref::<Float64Chunked>()
-                .unwrap()
-                .clone(),
+            None => unsafe {
+                ChunkedArray::from_chunks(
+                    x.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, x.len())],
+                )
+            },
         },
         _ => arity::binary_elementwise_values(x, y, f),
     }
@@ -472,14 +474,30 @@ fn haversine_struct(inputs: &[Series], kwargs: HaversineKwargs) -> PolarsResult<
             let x_long = x_long.f32().unwrap();
             let y_lat = y_lat.f32().unwrap();
             let y_long = y_long.f32().unwrap();
-            haversine_dist(x_lat, x_long, y_lat, y_long, kwargs.unit)?.into_series()
+            haversine_dist(
+                x_lat,
+                x_long,
+                y_lat,
+                y_long,
+                kwargs.unit,
+                ArrowDataType::Float32,
+            )?
+            .into_series()
         }
         DataType::Float64 => {
             let x_lat = x_lat.f64().unwrap();
             let x_long = x_long.f64().unwrap();
             let y_lat = y_lat.f64().unwrap();
             let y_long = y_long.f64().unwrap();
-            haversine_dist(x_lat, x_long, y_lat, y_long, kwargs.unit)?.into_series()
+            haversine_dist(
+                x_lat,
+                x_long,
+                y_lat,
+                y_long,
+                kwargs.unit,
+                ArrowDataType::Float64,
+            )?
+            .into_series()
         }
         _ => unimplemented!(),
     })

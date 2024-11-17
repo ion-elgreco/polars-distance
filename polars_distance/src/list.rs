@@ -103,11 +103,12 @@ pub fn elementwise_int_inp<T: NativeType + Hash + Eq>(
                     })
                 })
             }
-            None => new_null_array(ArrowDataType::Float64, a.len())
-                .as_any()
-                .downcast_ref::<Float64Chunked>()
-                .unwrap()
-                .clone(),
+            None => unsafe {
+                ChunkedArray::from_chunks(
+                    a.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, a.len())],
+                )
+            },
         },
         _ => binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {
@@ -137,11 +138,12 @@ pub fn elementwise_string_inp(
                     a.map(|a| f(a.as_any().downcast_ref::<Utf8ViewArray>().unwrap(), b_value))
                 })
             }
-            None => new_null_array(ArrowDataType::Float64, a.len())
-                .as_any()
-                .downcast_ref::<Float64Chunked>()
-                .unwrap()
-                .clone(),
+            None => unsafe {
+                ChunkedArray::from_chunks(
+                    a.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, a.len())],
+                )
+            },
         },
         _ => binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {
@@ -268,11 +270,9 @@ pub fn tversky_index(
                             _ => None,
                         })
                     }
-                    None => new_null_array(ArrowDataType::Float64, a.len())
-                        .as_any()
-                        .downcast_ref::<Float64Chunked>()
-                        .unwrap()
-                        .clone(),
+                    None => unsafe {
+                        ChunkedArray::from_chunks(a.name().clone(), vec![new_null_array(ArrowDataType::Float64, a.len())])
+                    },
                 },
                 _ => binary_elementwise(a, b, |a, b| match (a, b) {
                     (Some(a), Some(b)) => {
@@ -300,11 +300,9 @@ pub fn tversky_index(
                                 _ => None,
                             })
                         }
-                        None => new_null_array(ArrowDataType::Float64, a.len())
-                            .as_any()
-                            .downcast_ref::<Float64Chunked>()
-                            .unwrap()
-                            .clone(),
+                        None => unsafe {
+                            ChunkedArray::from_chunks(a.name().clone(), vec![new_null_array(ArrowDataType::Float64, a.len())])
+                        },
                     },
                     _ => binary_elementwise(a, b, |a, b| match (a, b) {
                         (Some(a), Some(b)) => {

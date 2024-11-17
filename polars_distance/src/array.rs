@@ -61,11 +61,12 @@ pub fn distance_calc_numeric_inp(
                     _ => Ok(None),
                 })
             }
-            None => Ok(new_null_array(ArrowDataType::Float64, a.len())
-                .as_any()
-                .downcast_ref::<Float64Chunked>()
-                .unwrap()
-                .clone()),
+            None => unsafe {
+                Ok(ChunkedArray::from_chunks(
+                    a.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, a.len())],
+                ))
+            },
         },
         _ => try_binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {
@@ -121,11 +122,12 @@ pub fn distance_calc_uint_inp(
                     _ => Ok(None),
                 })
             }
-            None => Ok(new_null_array(ArrowDataType::Float64, a.len())
-                .as_any()
-                .downcast_ref::<Float64Chunked>()
-                .unwrap()
-                .clone()),
+            None => unsafe {
+                Ok(ChunkedArray::from_chunks(
+                    a.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, a.len())],
+                ))
+            },
         },
         _ => try_binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {
@@ -190,11 +192,12 @@ pub fn euclidean_dist(
                     _ => Ok(None),
                 })
             }
-            None => Ok(new_null_array(ArrowDataType::Float64, a.len())
-                .as_any()
-                .downcast_ref::<Float64Chunked>()
-                .unwrap()
-                .clone()),
+            None => unsafe {
+                Ok(ChunkedArray::from_chunks(
+                    a.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, a.len())],
+                ))
+            },
         },
         _ => try_binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {
@@ -277,11 +280,12 @@ pub fn cosine_dist(
                     _ => Ok(None),
                 })
             }
-            None => Ok(new_null_array(ArrowDataType::Float64, a.len())
-                .as_any()
-                .downcast_ref::<Float64Chunked>()
-                .unwrap()
-                .clone()),
+            None => unsafe {
+                Ok(ChunkedArray::from_chunks(
+                    a.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, a.len())],
+                ))
+            },
         },
         _ => try_binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {
@@ -357,11 +361,12 @@ pub fn minkowski_dist(
                     _ => Ok(None),
                 })
             }
-            None => Ok(new_null_array(ArrowDataType::Float64, a.len())
-                .as_any()
-                .downcast_ref::<Float64Chunked>()
-                .unwrap()
-                .clone()),
+            None => unsafe {
+                Ok(ChunkedArray::from_chunks(
+                    a.name().clone(),
+                    vec![new_null_array(ArrowDataType::Float64, a.len())],
+                ))
+            },
         },
         _ => try_binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {

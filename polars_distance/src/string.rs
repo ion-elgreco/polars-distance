@@ -6,7 +6,6 @@ pub fn hamming_dist(x: &str, y: &str) -> u32 {
     let result =
         hamming::distance_with_args(x.chars(), y.chars(), &hamming::Args::default().pad(true))
             as u32;
-    dbg!(result.clone());
     result
 }
 

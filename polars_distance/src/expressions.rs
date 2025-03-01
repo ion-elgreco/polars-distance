@@ -18,6 +18,7 @@ use polars_arrow::array::new_null_array;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 
+
 #[derive(Deserialize)]
 struct TverskyIndexKwargs {
     alpha: f64,
@@ -85,6 +86,7 @@ fn hamming_str(inputs: &[Series]) -> PolarsResult<Series> {
 
     Ok(elementwise_str_u32(x, y, hamming_dist).into_series())
 }
+
 
 #[polars_expr(output_type=Float64)]
 fn hamming_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
@@ -274,20 +276,89 @@ fn prefix_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     Ok(elementwise_str_f64(x, y, prefix_normalized_dist).into_series())
 }
 
+fn infer_euclidean_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    // We expect two input Fields for a binary expression (the two Series).
+    // The first input_fields[0] must be an Array(F32 or F64, width).
+    // Similarly input_fields[1].dtype should match.
+
+    if input_fields.len() != 2 {
+        polars_bail!(ShapeMismatch: "euclidean_arr expects 2 inputs, got {}", input_fields.len());
+    }
+
+    // We'll inspect just the first field's DataType to decide the output.
+    // Typically we ensure both match inside the function body, but for the sake
+    // of the plan, let's do minimal checking here.
+
+    match &input_fields[0].dtype {
+        // If the input is an Array with an inner dtype (like Float32 or Float64)
+        DataType::Array(inner, _width) => {
+            match &**inner {
+                DataType::Float32 => {
+                    // We'll produce a float32 result
+                    Ok(Field::new("euclidean".into(), DataType::Float32))
+                }
+                DataType::Float64 => {
+                    // We'll produce a float64 result
+                    Ok(Field::new("euclidean".into(), DataType::Float64))
+                }
+                dt => {
+                    polars_bail!(
+                        ComputeError:
+                        "euclidean distance not supported for inner type {:?}",
+                        dt
+                    );
+                }
+            }
+        }
+        dt => {
+            polars_bail!(
+                ComputeError:
+                "euclidean_arr input must be an Array, got {}",
+                dt
+            );
+        }
+    }
+}
+
 // ARRAY EXPRESSIONS
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_euclidean_dtype)]
 fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
 
     if x.width() != y.width() {
         polars_bail!(InvalidOperation:
-            "The dimensions of each array are not the same. 
-                `{}` width: {}, 
+            "The dimensions of each array are not the same.
+                `{}` width: {},
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
 
-    euclidean_dist(x, y).map(|ca| ca.into_series())
+    match x.inner_dtype() {
+        DataType::Float32 => {
+            // check y.inner_dtype() too
+            polars_ensure!(
+                *y.inner_dtype() == DataType::Float32,
+                ComputeError:
+                "euclidean distance: both arrays must be float32 if one is float32"
+            );
+            let out_f32 = crate::array::euclidean_dist_f32(x, y)?;
+            Ok(out_f32.into_series())
+        }
+        DataType::Float64 => {
+            polars_ensure!(
+                *y.inner_dtype() == DataType::Float64,
+                ComputeError:
+                "euclidean distance: both arrays must be float64 if one is float64"
+            );
+            let out_f64 = crate::array::euclidean_dist_f64(x, y)?;
+            Ok(out_f64.into_series())
+        }
+        other => polars_bail!(
+            ComputeError:
+            "euclidean distance not supported for inner dtype: {}",
+            other
+        ),
+    }
 }
 
 #[polars_expr(output_type=Float64)]

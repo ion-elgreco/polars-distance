@@ -2,6 +2,8 @@ use distances::vectors::minkowski;
 use polars::prelude::arity::{try_binary_elementwise, try_unary_elementwise};
 use polars::prelude::*;
 use polars_arrow::array::{new_null_array, Array, PrimitiveArray};
+use polars::export::num::Float;
+
 
 fn collect_into_vecf64(arr: Box<dyn Array>) -> Vec<f64> {
     arr.as_any()
@@ -144,10 +146,14 @@ pub fn distance_calc_uint_inp(
     }
 }
 
-pub fn euclidean_dist(
+pub fn euclidean_dist<T>(
     a: &ChunkedArray<FixedSizeListType>,
     b: &ChunkedArray<FixedSizeListType>,
-) -> PolarsResult<Float64Chunked> {
+) -> PolarsResult<ChunkedArray<T>>
+where
+    T: PolarsFloatType,
+    T::Native: Float + std::ops::Sub<Output = T::Native>,
+{
     polars_ensure!(
         a.inner_dtype() == b.inner_dtype(),
         ComputeError: "inner data types don't match"
@@ -157,8 +163,9 @@ pub fn euclidean_dist(
         ComputeError: "inner data types must be numeric"
     );
 
-    let s1 = a.cast(&DataType::Array(Box::new(DataType::Float64), a.width()))?;
-    let s2 = b.cast(&DataType::Array(Box::new(DataType::Float64), a.width()))?;
+    // Cast to the target float type
+    let s1 = a.cast(&DataType::Array(Box::new(T::get_dtype()), a.width()))?;
+    let s2 = b.cast(&DataType::Array(Box::new(T::get_dtype()), a.width()))?;
 
     let a: &ArrayChunked = s1.array()?;
     let b: &ArrayChunked = s2.array()?;
@@ -177,25 +184,32 @@ pub fn euclidean_dist(
                         }
                         let a = a
                             .as_any()
-                            .downcast_ref::<PrimitiveArray<f64>>()
+                            .downcast_ref::<PrimitiveArray<T::Native>>()
                             .unwrap()
                             .values_iter();
                         let b = b_value
                             .as_any()
-                            .downcast_ref::<PrimitiveArray<f64>>()
+                            .downcast_ref::<PrimitiveArray<T::Native>>()
                             .unwrap()
                             .values_iter();
                         Ok(Some(
-                            a.zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt(),
+                            a.zip(b).map(|(x, y)| (*x - *y).powi(2)).sum::<T::Native>().sqrt(),
                         ))
                     }
                     _ => Ok(None),
                 })
             }
             None => unsafe {
+                // Use T's data type to create a null array of appropriate type
+                let arrow_data_type = match T::get_dtype() {
+                    DataType::Float32 => ArrowDataType::Float32,
+                    DataType::Float64 => ArrowDataType::Float64,
+                    _ => unreachable!("T must be Float32Type or Float64Type"),
+                };
+
                 Ok(ChunkedArray::from_chunks(
                     a.name().clone(),
-                    vec![new_null_array(ArrowDataType::Float64, a.len())],
+                    vec![new_null_array(arrow_data_type, a.len())],
                 ))
             },
         },
@@ -206,16 +220,16 @@ pub fn euclidean_dist(
                 } else {
                     let a = a
                         .as_any()
-                        .downcast_ref::<PrimitiveArray<f64>>()
+                        .downcast_ref::<PrimitiveArray<T::Native>>()
                         .unwrap()
                         .values_iter();
                     let b = b
                         .as_any()
-                        .downcast_ref::<PrimitiveArray<f64>>()
+                        .downcast_ref::<PrimitiveArray<T::Native>>()
                         .unwrap()
                         .values_iter();
                     Ok(Some(
-                        a.zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt(),
+                        a.zip(b).map(|(x, y)| (*x - *y).powi(2)).sum::<T::Native>().sqrt(),
                     ))
                 }
             }
@@ -223,6 +237,113 @@ pub fn euclidean_dist(
         }),
     }
 }
+
+// For backward compatibility with the original function
+pub fn euclidean_dist_f64(
+    a: &ChunkedArray<FixedSizeListType>,
+    b: &ChunkedArray<FixedSizeListType>,
+) -> PolarsResult<Float64Chunked> {
+    euclidean_dist::<Float64Type>(a, b)
+}
+
+// Implementation for F32
+pub fn euclidean_dist_f32(
+    a: &ChunkedArray<FixedSizeListType>,
+    b: &ChunkedArray<FixedSizeListType>,
+) -> PolarsResult<Float32Chunked> {
+    euclidean_dist::<Float32Type>(a, b)
+}
+
+// Function for determining the output type in expressions
+#[allow(non_snake_case)]
+fn infer_euclidean_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    // Return output field with the same type as the inputs
+    // For expression system integration
+    Ok(Field::new(
+        "euclidean_distance".into(),
+        DataType::Float64,
+    ))
+}
+
+// pub fn euclidean_dist(
+//     a: &ChunkedArray<FixedSizeListType>,
+//     b: &ChunkedArray<FixedSizeListType>,
+// ) -> PolarsResult<Float64Chunked> {
+//     polars_ensure!(
+//         a.inner_dtype() == b.inner_dtype(),
+//         ComputeError: "inner data types don't match"
+//     );
+//     polars_ensure!(
+//         a.inner_dtype().is_numeric(),
+//         ComputeError: "inner data types must be numeric"
+//     );
+// 
+//     let s1 = a.cast(&DataType::Array(Box::new(DataType::Float64), a.width()))?;
+//     let s2 = b.cast(&DataType::Array(Box::new(DataType::Float64), a.width()))?;
+// 
+//     let a: &ArrayChunked = s1.array()?;
+//     let b: &ArrayChunked = s2.array()?;
+// 
+//     let (a, b) = if a.len() < b.len() { (b, a) } else { (a, b) };
+//     match b.len() {
+//         1 => match unsafe { b.get_unchecked(0) } {
+//             Some(b_value) => {
+//                 if b_value.null_count() > 0 {
+//                     polars_bail!(ComputeError: "array cannot contain nulls")
+//                 }
+//                 try_unary_elementwise(a, |a| match a {
+//                     Some(a) => {
+//                         if a.null_count() > 0 {
+//                             polars_bail!(ComputeError: "array cannot contain nulls")
+//                         }
+//                         let a = a
+//                             .as_any()
+//                             .downcast_ref::<PrimitiveArray<f64>>()
+//                             .unwrap()
+//                             .values_iter();
+//                         let b = b_value
+//                             .as_any()
+//                             .downcast_ref::<PrimitiveArray<f64>>()
+//                             .unwrap()
+//                             .values_iter();
+//                         Ok(Some(
+//                             a.zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt(),
+//                         ))
+//                     }
+//                     _ => Ok(None),
+//                 })
+//             }
+//             None => unsafe {
+//                 Ok(ChunkedArray::from_chunks(
+//                     a.name().clone(),
+//                     vec![new_null_array(ArrowDataType::Float64, a.len())],
+//                 ))
+//             },
+//         },
+//         _ => try_binary_elementwise(a, b, |a, b| match (a, b) {
+//             (Some(a), Some(b)) => {
+//                 if a.null_count() > 0 || b.null_count() > 0 {
+//                     polars_bail!(ComputeError: "array cannot contain nulls")
+//                 } else {
+//                     let a = a
+//                         .as_any()
+//                         .downcast_ref::<PrimitiveArray<f64>>()
+//                         .unwrap()
+//                         .values_iter();
+//                     let b = b
+//                         .as_any()
+//                         .downcast_ref::<PrimitiveArray<f64>>()
+//                         .unwrap()
+//                         .values_iter();
+//                     Ok(Some(
+//                         a.zip(b).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt(),
+//                     ))
+//                 }
+//             }
+//             _ => Ok(None),
+//         }),
+//     }
+// }
 
 pub fn cosine_dist(
     a: &ChunkedArray<FixedSizeListType>,

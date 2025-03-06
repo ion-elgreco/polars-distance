@@ -483,8 +483,8 @@ fn minkowski_arr(inputs: &[Series], kwargs: MinkowskiKwargs) -> PolarsResult<Ser
         x, 
         y, 
         "minkowski",
-        |x_f32, y_f32| crate::array::minkowski_dist_generic::<Float32Type>(x_f32, y_f32, p).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::minkowski_dist_generic::<Float64Type>(x_f64, y_f64, p).map(|ca| ca.into_series())
+        |x_f32, y_f32| crate::array::minkowski_dist::<Float32Type>(x_f32, y_f32, p).map(|ca| ca.into_series()),
+        |x_f64, y_f64| crate::array::minkowski_dist::<Float64Type>(x_f64, y_f64, p).map(|ca| ca.into_series())
     )
 }
 

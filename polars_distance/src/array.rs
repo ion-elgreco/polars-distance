@@ -332,7 +332,7 @@ where
                         .unwrap()
                         .values_iter();
 
-                    let dot_prod = a.clone().zip(b.clone()).map(|(x, y)| *x * *y).sum();
+                    let dot_prod: T::Native = a.clone().zip(b.clone()).map(|(x, y)| *x * *y).sum();
                     let mag1 = a.map(|x| x.powi(2)).sum::<T::Native>().sqrt();
                     let mag2 = b.map(|y| y.powi(2)).sum::<T::Native>().sqrt();
 

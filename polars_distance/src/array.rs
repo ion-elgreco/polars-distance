@@ -238,22 +238,6 @@ where
     }
 }
 
-// For backward compatibility with the original function
-pub fn euclidean_dist_f64(
-    a: &ChunkedArray<FixedSizeListType>,
-    b: &ChunkedArray<FixedSizeListType>,
-) -> PolarsResult<Float64Chunked> {
-    euclidean_dist::<Float64Type>(a, b)
-}
-
-// Implementation for F32
-pub fn euclidean_dist_f32(
-    a: &ChunkedArray<FixedSizeListType>,
-    b: &ChunkedArray<FixedSizeListType>,
-) -> PolarsResult<Float32Chunked> {
-    euclidean_dist::<Float32Type>(a, b)
-}
-
 pub fn cosine_dist(
     a: &ChunkedArray<FixedSizeListType>,
     b: &ChunkedArray<FixedSizeListType>,

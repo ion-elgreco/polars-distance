@@ -396,13 +396,13 @@ where
                             .as_any()
                             .downcast_ref::<PrimitiveArray<T::Native>>()
                             .unwrap()
-                            .values
+                            .values()
                             .to_vec();
                         let b = b_value
                             .as_any()
                             .downcast_ref::<PrimitiveArray<T::Native>>()
                             .unwrap()
-                            .values
+                            .values()
                             .to_vec();
                         Ok(Some(distance_fn(&a, &b)))
                     }
@@ -432,13 +432,13 @@ where
                         .as_any()
                         .downcast_ref::<PrimitiveArray<T::Native>>()
                         .unwrap()
-                        .values
+                        .values()
                         .to_vec();
                     let b = b
                         .as_any()
                         .downcast_ref::<PrimitiveArray<T::Native>>()
                         .unwrap()
-                        .values
+                        .values()
                         .to_vec();
                     Ok(Some(distance_fn(&a, &b)))
                 }
@@ -457,7 +457,7 @@ where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
-    let p_float = T::Native::from(p).unwrap();
+    let p_float = T::Native::from(p as f64).unwrap();
     let inv_p = T::Native::one() / p_float;
     
     vector_distance_calc::<T, _>(a, b, move |a, b| {

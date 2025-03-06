@@ -3,7 +3,7 @@ use polars::prelude::arity::{try_binary_elementwise, try_unary_elementwise};
 use polars::prelude::*;
 use polars_arrow::array::{new_null_array, Array, PrimitiveArray};
 use polars::export::num::Float;
-use polars_core::export::num_traits::{Zero, One, Float, FromPrimitive};
+use num_traits::{Zero, One, Float, FromPrimitive};
 
 
 fn collect_into_vecf64(arr: Box<dyn Array>) -> Vec<f64> {

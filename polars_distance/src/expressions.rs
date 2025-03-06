@@ -332,6 +332,39 @@ fn infer_euclidean_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
     infer_distance_arr_output(input_fields, "euclidean")
 }
 
+// Function to handle array dtype casting and determine output type
+pub fn prepare_arrays_for_distance<'a>(
+    x: &'a ArrayChunked,
+    y: &'a ArrayChunked,
+    distance_name: &str,
+) -> PolarsResult<(DataType, &'a ArrayChunked, &'a ArrayChunked)> {
+    // Determine what types to use and perform any necessary casting
+    match (x.inner_dtype(), y.inner_dtype()) {
+        (DataType::Float32, DataType::Float32) => {
+            Ok((DataType::Float32, x, y))
+        },
+        (DataType::Float64, DataType::Float64) => {
+            Ok((DataType::Float64, x, y))
+        },
+        (DataType::Float32, DataType::Float64) => {
+            // Cast x to Float64
+            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
+            Ok((DataType::Float64, x_f64.array()?, y))
+        },
+        (DataType::Float64, DataType::Float32) => {
+            // Cast y to Float64
+            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
+            Ok((DataType::Float64, x, y_f64.array()?))
+        },
+        (other, _) => polars_bail!(
+            ComputeError:
+            "{} distance not supported for inner dtype: {}",
+            distance_name,
+            other
+        ),
+    }
+}
+
 // ARRAY EXPRESSIONS
 #[polars_expr(output_type_func=infer_euclidean_arr_dtype)]
 fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
@@ -345,30 +378,8 @@ fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
 
-    // Determine what types to use and perform any necessary casting
-    let (x_final, y_final, output_type) = match (x.inner_dtype(), y.inner_dtype()) {
-        (DataType::Float32, DataType::Float32) => {
-            (x, y, DataType::Float32)
-        },
-        (DataType::Float64, DataType::Float64) => {
-            (x, y, DataType::Float64)
-        },
-        (DataType::Float32, DataType::Float64) => {
-            // Cast x to Float64
-            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
-            (x_f64.array()?, y, DataType::Float64)
-        },
-        (DataType::Float64, DataType::Float32) => {
-            // Cast y to Float64
-            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
-            (x, y_f64.array()?, DataType::Float64)
-        },
-        (other, _) => polars_bail!(
-            ComputeError:
-            "euclidean distance not supported for inner dtype: {}",
-            other
-        ),
-    };
+    // Use the common function to handle type casting and pass the distance name
+    let (output_type, x_final, y_final) = prepare_arrays_for_distance(x, y, "euclidean")?;
 
     // Now call the appropriate euclidean_dist based on the output type
     match output_type {

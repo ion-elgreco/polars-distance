@@ -448,7 +448,7 @@ where
     }
 }
 
-pub fn minkowski_dist_generic<T>(
+pub fn minkowski_dist<T>(
     a: &ChunkedArray<FixedSizeListType>,
     b: &ChunkedArray<FixedSizeListType>,
     p: i32,

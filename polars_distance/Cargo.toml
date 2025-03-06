@@ -17,6 +17,7 @@ serde = { version = "1", features = ["derive"] }
 distances = { version = "1.6.3"}
 rapidfuzz = { version = "0.5.0"}
 gestalt_ratio = { version = "0.2.1"}
+num-traits = { version. = "0.2" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 jemallocator = { version = "0.5", features = ["disable_initial_exec_tls"] }

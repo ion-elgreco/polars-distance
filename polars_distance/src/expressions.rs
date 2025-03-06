@@ -286,36 +286,43 @@ fn infer_distance_arr_output(input_fields: &[Field], metric_name: &str) -> Polar
         polars_bail!(ShapeMismatch: "{}_arr expects 2 inputs, got {}", metric_name, input_fields.len());
     }
 
-    // We'll inspect just the first field's DataType to decide the output.
-    // Typically we ensure both match inside the function body, but for the sake
-    // of the plan, let's do minimal checking here.
-
-    match &input_fields[0].dtype {
+    // Get the type of first input
+    let first_type = match &input_fields[0].dtype {
         // If the input is an Array with an inner dtype (like Float32 or Float64)
-        DataType::Array(inner, _width) => {
-            match &**inner {
-                DataType::Float32 => {
-                    Ok(Field::new(metric_name.into(), DataType::Float32))
-                }
-                DataType::Float64 => {
-                    Ok(Field::new(metric_name.into(), DataType::Float64))
-                }
-                dt => {
-                    polars_bail!(
-                        ComputeError:
-                        "{} distance not supported for inner type {:?}",
-                        metric_name,
-                        dt
-                    );
-                }
-            }
-        }
+        DataType::Array(inner, _width) => &**inner,
         dt => {
             polars_bail!(
                 ComputeError:
                 "{}_arr input must be an Array, got {}",
                 metric_name,
                 dt
+            );
+        }
+    };
+    
+    // Get the type of second input
+    let second_type = match &input_fields[1].dtype {
+        DataType::Array(inner, _width) => &**inner,
+        _ => first_type, // Default to first type if second isn't an array
+    };
+
+    // If either input is Float64, output is Float64, otherwise Float32
+    match (first_type, second_type) {
+        (DataType::Float32, DataType::Float32) => {
+            Ok(Field::new(metric_name.into(), DataType::Float32))
+        }
+        (DataType::Float64, _) | (_, DataType::Float64) => {
+            Ok(Field::new(metric_name.into(), DataType::Float64))
+        }
+        (DataType::Float32, _) | (_, DataType::Float32) => {
+            // This covers cases where one side is Float32 and the other is non-float
+            Ok(Field::new(metric_name.into(), DataType::Float32))
+        }
+        _ => {
+            polars_bail!(
+                ComputeError:
+                "{} distance not supported for inner types",
+                metric_name
             );
         }
     }

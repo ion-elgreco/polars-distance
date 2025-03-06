@@ -372,30 +372,22 @@ pub fn determine_distance_output_type(
     y_dtype: &DataType,
     distance_name: &str,
 ) -> PolarsResult<DataType> {
-    match (x_dtype, y_dtype) {
-        // Both Float32 - leave as Float32
-        (DataType::Float32, DataType::Float32) => Ok(DataType::Float32),
-
-        // Mix of Float32 and Float64 - Float64 wins
-        (DataType::Float32, DataType::Float64) => Ok(DataType::Float64),
-        (DataType::Float64, DataType::Float32) => Ok(DataType::Float64),
-        (DataType::Float64, DataType::Float64) => Ok(DataType::Float64),
-
-
-        // UInt64 and either Float32/Float64 - convert to Float64
-        (DataType::UInt64, DataType::UInt64) => Ok(DataType::Float64),
-        (DataType::UInt64, DataType::Float32) => Ok(DataType::Float64),
-        (DataType::UInt64, DataType::Float64) => Ok(DataType::Float64),
-        (DataType::Float32, DataType::UInt64) => Ok(DataType::Float64),
-        (DataType::Float64, DataType::UInt64) => Ok(DataType::Float64),
-
-        (other, _) => polars_bail!(
-            ComputeError:
-            "{} distance not supported for inner dtype: {}",
-            distance_name,
-            other
-        ),
+    // If any input is Float64 or UInt64, output is Float64
+    if matches!(x_dtype, DataType::Float64 | DataType::UInt64) || 
+       matches!(y_dtype, DataType::Float64 | DataType::UInt64) {
+        return Ok(DataType::Float64);
     }
+    // Both are Float32, output is Float32
+    if matches!(x_dtype, DataType::Float32) && matches!(y_dtype, DataType::Float32) {
+        return Ok(DataType::Float32);
+    }
+    polars_bail!(
+        ComputeError:
+        "{} distance not supported for inner dtype: {:?} and {:?}",
+        distance_name,
+        x_dtype,
+        y_dtype
+    )
 }
 
 pub fn compute_array_distance<F, G>(
@@ -416,67 +408,32 @@ where
                 `y` width: {}", x.width(), y.width());
     }
 
-
     // Determine the output type
     let output_type = determine_distance_output_type(&x.inner_dtype(), &y.inner_dtype(), distance_name)?;
     
-    // Handle the type casting and calculation
-    match (x.inner_dtype(), y.inner_dtype(), &output_type) {
-        // Float32 unmixed case - keep as Float32
-        // Both Float32 -> Float32 output
-        (DataType::Float32, DataType::Float32, DataType::Float32) => {
+    match output_type {
+        DataType::Float32 => {
+            // Both must be Float32 already (from our type determination logic)
             f32_impl(x, y)
         },
-        // ----------------------------------------------------------
-        // Float64 un/mixed cases - cast to Float64
-        // Both Float64 -> Float64 output
-        (DataType::Float64, DataType::Float64, DataType::Float64) => {
-            f64_impl(x, y)
+        DataType::Float64 => {
+            // Cast x to Float64 if needed
+            let x_f64 = if !matches!(x.inner_dtype(), DataType::Float64) {
+                x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?.array()?
+            } else {
+                x
+            };
+            
+            // Cast y to Float64 if needed
+            let y_f64 = if !matches!(y.inner_dtype(), DataType::Float64) {
+                y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?.array()?
+            } else {
+                y
+            };
+            
+            f64_impl(x_f64, y_f64)
         },
-        // Float32 and Float64 -> cast Float32 to Float64, Float64 output
-        (DataType::Float32, DataType::Float64, DataType::Float64) => {
-            // Cast x to Float64
-            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
-            f64_impl(x_f64.array()?, y)
-        },
-        // Float64 and Float32 -> cast Float32 to Float64, Float64 output
-        (DataType::Float64, DataType::Float32, DataType::Float64) => {
-            // Cast y to Float64
-            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
-            f64_impl(x, y_f64.array()?)
-        },
-        // ----------------------------------------------------------
-        // UInt64 un/mixed cases - cast to Float64
-        (DataType::UInt64, DataType::UInt64, DataType::Float64) => {
-            // Cast both to Float64
-            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
-            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
-            f64_impl(x_f64.array()?, y_f64.array()?)
-        },
-        (DataType::UInt64, DataType::Float32, DataType::Float64) => {
-            // Cast both to Float64
-            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
-            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
-            f64_impl(x_f64.array()?, y_f64.array()?)
-        },
-        (DataType::UInt64, DataType::Float64, DataType::Float64) => {
-            // Cast x to Float64
-            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
-            f64_impl(x_f64.array()?, y)
-        },
-        (DataType::Float32, DataType::UInt64, DataType::Float64) => {
-            // Cast both to Float64
-            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
-            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
-            f64_impl(x_f64.array()?, y_f64.array()?)
-        },
-        (DataType::Float64, DataType::UInt64, DataType::Float64) => {
-            // Cast y to Float64
-            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
-            f64_impl(x, y_f64.array()?)
-        },
-        // This should be unreachable since we've filtered the types above
-        _ => unreachable!()
+        _ => unreachable!("Output type should only be Float32 or Float64")
     }
 }
 

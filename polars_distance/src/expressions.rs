@@ -332,30 +332,17 @@ fn infer_euclidean_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
     infer_distance_arr_output(input_fields, "euclidean")
 }
 
-// Function to handle array dtype casting and determine output type
-pub fn prepare_arrays_for_distance<'a>(
-    x: &'a ArrayChunked,
-    y: &'a ArrayChunked,
+// Function to determine the output data type for distance calculations
+pub fn determine_distance_output_type(
+    x_dtype: &DataType,
+    y_dtype: &DataType,
     distance_name: &str,
-) -> PolarsResult<(DataType, &'a ArrayChunked, &'a ArrayChunked)> {
-    // Determine what types to use and perform any necessary casting
-    match (x.inner_dtype(), y.inner_dtype()) {
-        (DataType::Float32, DataType::Float32) => {
-            Ok((DataType::Float32, x, y))
-        },
-        (DataType::Float64, DataType::Float64) => {
-            Ok((DataType::Float64, x, y))
-        },
-        (DataType::Float32, DataType::Float64) => {
-            // Cast x to Float64
-            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
-            Ok((DataType::Float64, x_f64.array()?, y))
-        },
-        (DataType::Float64, DataType::Float32) => {
-            // Cast y to Float64
-            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
-            Ok((DataType::Float64, x, y_f64.array()?))
-        },
+) -> PolarsResult<DataType> {
+    match (x_dtype, y_dtype) {
+        (DataType::Float32, DataType::Float32) => Ok(DataType::Float32),
+        (DataType::Float32, DataType::Float64) => Ok(DataType::Float64),
+        (DataType::Float64, DataType::Float32) => Ok(DataType::Float64),
+        (DataType::Float64, DataType::Float64) => Ok(DataType::Float64),
         (other, _) => polars_bail!(
             ComputeError:
             "{} distance not supported for inner dtype: {}",
@@ -365,34 +352,69 @@ pub fn prepare_arrays_for_distance<'a>(
     }
 }
 
+// Function that can be used by other distance calculations 
+pub fn compute_array_distance<F, G>(
+    x: &ArrayChunked, 
+    y: &ArrayChunked, 
+    distance_name: &str,
+    f32_impl: F,
+    f64_impl: G
+) -> PolarsResult<Series> 
+where 
+    F: FnOnce(&ArrayChunked, &ArrayChunked) -> PolarsResult<Series>,
+    G: FnOnce(&ArrayChunked, &ArrayChunked) -> PolarsResult<Series>
+{
+    if x.width() != y.width() {
+        polars_bail!(InvalidOperation:
+            "The dimensions of each array are not the same.
+                `x` width: {},
+                `y` width: {}", x.width(), y.width());
+    }
+
+    // Determine the output type
+    let output_type = determine_distance_output_type(&x.inner_dtype(), &y.inner_dtype(), distance_name)?;
+    
+    // Handle the type casting and calculation
+    match (x.inner_dtype(), y.inner_dtype(), &output_type) {
+        // Both Float32 -> Float32 output
+        (DataType::Float32, DataType::Float32, DataType::Float32) => {
+            f32_impl(x, y)
+        },
+        // Both Float64 -> Float64 output
+        (DataType::Float64, DataType::Float64, DataType::Float64) => {
+            f64_impl(x, y)
+        },
+        // Float32 and Float64 -> cast Float32 to Float64, Float64 output
+        (DataType::Float32, DataType::Float64, DataType::Float64) => {
+            // Cast x to Float64
+            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
+            f64_impl(x_f64.array()?, y)
+        },
+        // Float64 and Float32 -> cast Float32 to Float64, Float64 output
+        (DataType::Float64, DataType::Float32, DataType::Float64) => {
+            // Cast y to Float64
+            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
+            f64_impl(x, y_f64.array()?)
+        },
+        // This should be unreachable since we've filtered the types above
+        _ => unreachable!()
+    }
+}
+
 // ARRAY EXPRESSIONS
 #[polars_expr(output_type_func=infer_euclidean_arr_dtype)]
 fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
 
-    if x.width() != y.width() {
-        polars_bail!(InvalidOperation:
-            "The dimensions of each array are not the same.
-                `{}` width: {},
-                `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
-    }
-
-    // Use the common function to handle type casting and pass the distance name
-    let (output_type, x_final, y_final) = prepare_arrays_for_distance(x, y, "euclidean")?;
-
-    // Now call the appropriate euclidean_dist based on the output type
-    match output_type {
-        DataType::Float32 => {
-            let result = crate::array::euclidean_dist::<Float32Type>(x_final, y_final)?;
-            Ok(result.into_series())
-        },
-        DataType::Float64 => {
-            let result = crate::array::euclidean_dist::<Float64Type>(x_final, y_final)?;
-            Ok(result.into_series())
-        },
-        _ => unreachable!(), // We've already filtered the types above
-    }
+    // Use our reusable function to compute the distance
+    compute_array_distance(
+        x, 
+        y, 
+        "euclidean",
+        |x_f32, y_f32| crate::array::euclidean_dist::<Float32Type>(x_f32, y_f32),
+        |x_f64, y_f64| crate::array::euclidean_dist::<Float64Type>(x_f64, y_f64)
+    )
 }
 
 #[polars_expr(output_type=Float64)]

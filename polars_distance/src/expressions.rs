@@ -276,13 +276,14 @@ fn prefix_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     Ok(elementwise_str_f64(x, y, prefix_normalized_dist).into_series())
 }
 
-fn infer_euclidean_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+// General helper for all distance metrics
+fn infer_distance_arr_output(input_fields: &[Field], metric_name: &str) -> PolarsResult<Field> {
     // We expect two input Fields for a binary expression (the two Series).
     // The first input_fields[0] must be an Array(F32 or F64, width).
     // Similarly input_fields[1].dtype should match.
 
     if input_fields.len() != 2 {
-        polars_bail!(ShapeMismatch: "euclidean_arr expects 2 inputs, got {}", input_fields.len());
+        polars_bail!(ShapeMismatch: "{}_arr expects 2 inputs, got {}", metric_name, input_fields.len());
     }
 
     // We'll inspect just the first field's DataType to decide the output.
@@ -294,17 +295,16 @@ fn infer_euclidean_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
         DataType::Array(inner, _width) => {
             match &**inner {
                 DataType::Float32 => {
-                    // We'll produce a float32 result
-                    Ok(Field::new("euclidean".into(), DataType::Float32))
+                    Ok(Field::new(metric_name.into(), DataType::Float32))
                 }
                 DataType::Float64 => {
-                    // We'll produce a float64 result
-                    Ok(Field::new("euclidean".into(), DataType::Float64))
+                    Ok(Field::new(metric_name.into(), DataType::Float64))
                 }
                 dt => {
                     polars_bail!(
                         ComputeError:
-                        "euclidean distance not supported for inner type {:?}",
+                        "{} distance not supported for inner type {:?}",
+                        metric_name,
                         dt
                     );
                 }
@@ -313,15 +313,20 @@ fn infer_euclidean_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
         dt => {
             polars_bail!(
                 ComputeError:
-                "euclidean_arr input must be an Array, got {}",
+                "{}_arr input must be an Array, got {}",
+                metric_name,
                 dt
             );
         }
     }
 }
 
+fn infer_euclidean_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "euclidean")
+}
+
 // ARRAY EXPRESSIONS
-#[polars_expr(output_type_func=infer_euclidean_dtype)]
+#[polars_expr(output_type_func=infer_euclidean_arr_dtype)]
 fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;

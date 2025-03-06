@@ -314,8 +314,10 @@ fn infer_distance_arr_output(input_fields: &[Field], metric_name: &str) -> Polar
         (DataType::Float64, _) | (_, DataType::Float64) => {
             Ok(Field::new(metric_name.into(), DataType::Float64))
         }
+        (DataType::UInt64, _) | (_, DataType::UInt64) => {
+            Ok(Field::new(metric_name.into(), DataType::Float64))
+        }
         (DataType::Float32, _) | (_, DataType::Float32) => {
-            // This covers cases where one side is Float32 and the other is non-float
             Ok(Field::new(metric_name.into(), DataType::Float32))
         }
         _ => {
@@ -371,10 +373,22 @@ pub fn determine_distance_output_type(
     distance_name: &str,
 ) -> PolarsResult<DataType> {
     match (x_dtype, y_dtype) {
+        // Both Float32 - leave as Float32
         (DataType::Float32, DataType::Float32) => Ok(DataType::Float32),
+
+        // Mix of Float32 and Float64 - Float64 wins
         (DataType::Float32, DataType::Float64) => Ok(DataType::Float64),
         (DataType::Float64, DataType::Float32) => Ok(DataType::Float64),
         (DataType::Float64, DataType::Float64) => Ok(DataType::Float64),
+
+
+        // UInt64 and either Float32/Float64 - convert to Float64
+        (DataType::UInt64, DataType::UInt64) => Ok(DataType::Float64),
+        (DataType::UInt64, DataType::Float32) => Ok(DataType::Float64),
+        (DataType::UInt64, DataType::Float64) => Ok(DataType::Float64),
+        (DataType::Float32, DataType::UInt64) => Ok(DataType::Float64),
+        (DataType::Float64, DataType::UInt64) => Ok(DataType::Float64),
+
         (other, _) => polars_bail!(
             ComputeError:
             "{} distance not supported for inner dtype: {}",
@@ -408,10 +422,13 @@ where
     
     // Handle the type casting and calculation
     match (x.inner_dtype(), y.inner_dtype(), &output_type) {
+        // Float32 unmixed case - keep as Float32
         // Both Float32 -> Float32 output
         (DataType::Float32, DataType::Float32, DataType::Float32) => {
             f32_impl(x, y)
         },
+        // ----------------------------------------------------------
+        // Float64 un/mixed cases - cast to Float64
         // Both Float64 -> Float64 output
         (DataType::Float64, DataType::Float64, DataType::Float64) => {
             f64_impl(x, y)
@@ -424,6 +441,36 @@ where
         },
         // Float64 and Float32 -> cast Float32 to Float64, Float64 output
         (DataType::Float64, DataType::Float32, DataType::Float64) => {
+            // Cast y to Float64
+            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
+            f64_impl(x, y_f64.array()?)
+        },
+        // ----------------------------------------------------------
+        // UInt64 un/mixed cases - cast to Float64
+        (DataType::UInt64, DataType::UInt64, DataType::Float64) => {
+            // Cast both to Float64
+            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
+            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
+            f64_impl(x_f64.array()?, y_f64.array()?)
+        },
+        (DataType::UInt64, DataType::Float32, DataType::Float64) => {
+            // Cast both to Float64
+            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
+            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
+            f64_impl(x_f64.array()?, y_f64.array()?)
+        },
+        (DataType::UInt64, DataType::Float64, DataType::Float64) => {
+            // Cast x to Float64
+            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
+            f64_impl(x_f64.array()?, y)
+        },
+        (DataType::Float32, DataType::UInt64, DataType::Float64) => {
+            // Cast both to Float64
+            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
+            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
+            f64_impl(x_f64.array()?, y_f64.array()?)
+        },
+        (DataType::Float64, DataType::UInt64, DataType::Float64) => {
             // Cast y to Float64
             let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
             f64_impl(x, y_f64.array()?)

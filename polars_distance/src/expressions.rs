@@ -345,31 +345,42 @@ fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
 
-    match x.inner_dtype() {
-        DataType::Float32 => {
-            // check y.inner_dtype() too
-            polars_ensure!(
-                *y.inner_dtype() == DataType::Float32,
-                ComputeError:
-                "euclidean distance: both arrays must be float32 if one is float32"
-            );
-            let out_f32 = crate::array::euclidean_dist_f32(x, y)?;
-            Ok(out_f32.into_series())
-        }
-        DataType::Float64 => {
-            polars_ensure!(
-                *y.inner_dtype() == DataType::Float64,
-                ComputeError:
-                "euclidean distance: both arrays must be float64 if one is float64"
-            );
-            let out_f64 = crate::array::euclidean_dist_f64(x, y)?;
-            Ok(out_f64.into_series())
-        }
-        other => polars_bail!(
+    // Determine what types to use and perform any necessary casting
+    let (x_final, y_final, output_type) = match (x.inner_dtype(), y.inner_dtype()) {
+        (DataType::Float32, DataType::Float32) => {
+            (x, y, DataType::Float32)
+        },
+        (DataType::Float64, DataType::Float64) => {
+            (x, y, DataType::Float64)
+        },
+        (DataType::Float32, DataType::Float64) => {
+            // Cast x to Float64
+            let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
+            (x_f64.array()?, y, DataType::Float64)
+        },
+        (DataType::Float64, DataType::Float32) => {
+            // Cast y to Float64
+            let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
+            (x, y_f64.array()?, DataType::Float64)
+        },
+        (other, _) => polars_bail!(
             ComputeError:
             "euclidean distance not supported for inner dtype: {}",
             other
         ),
+    };
+
+    // Now call the appropriate euclidean_dist based on the output type
+    match output_type {
+        DataType::Float32 => {
+            let result = crate::array::euclidean_dist::<Float32Type>(x_final, y_final)?;
+            Ok(result.into_series())
+        },
+        DataType::Float64 => {
+            let result = crate::array::euclidean_dist::<Float64Type>(x_final, y_final)?;
+            Ok(result.into_series())
+        },
+        _ => unreachable!(), // We've already filtered the types above
     }
 }
 

@@ -2,7 +2,6 @@ use distances::vectors::minkowski;
 use polars::prelude::arity::{try_binary_elementwise, try_unary_elementwise};
 use polars::prelude::*;
 use polars_arrow::array::{new_null_array, Array, PrimitiveArray};
-use polars::export::num::Float;
 use num_traits::{Zero, One, Float, FromPrimitive};
 
 

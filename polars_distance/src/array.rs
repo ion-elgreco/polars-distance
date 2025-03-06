@@ -254,17 +254,6 @@ pub fn euclidean_dist_f32(
     euclidean_dist::<Float32Type>(a, b)
 }
 
-// Function for determining the output type in expressions
-#[allow(non_snake_case)]
-fn infer_euclidean_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
-    // Return output field with the same type as the inputs
-    // For expression system integration
-    Ok(Field::new(
-        "euclidean_distance".into(),
-        DataType::Float64,
-    ))
-}
-
 // pub fn euclidean_dist(
 //     a: &ChunkedArray<FixedSizeListType>,
 //     b: &ChunkedArray<FixedSizeListType>,

@@ -352,27 +352,6 @@ where
     }
 }
 
-pub fn minkowski_dist_generic<T>(
-    a: &ChunkedArray<FixedSizeListType>,
-    b: &ChunkedArray<FixedSizeListType>,
-    p: i32,
-) -> PolarsResult<ChunkedArray<T>>
-where
-    T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
-{
-    let p_float = T::Native::from(p).unwrap();
-    let inv_p = T::Native::one() / p_float;
-    
-    vector_distance_calc::<T, _>(a, b, move |a, b| {
-        let sum: T::Native = a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (*x - *y).abs().powf(p_float))
-            .sum();
-        sum.powf(inv_p)
-    })
-}
-
 pub fn vector_distance_calc<T, F>(
     a: &ChunkedArray<FixedSizeListType>,
     b: &ChunkedArray<FixedSizeListType>,
@@ -466,6 +445,27 @@ where
             _ => Ok(None),
         }),
     }
+}
+
+pub fn minkowski_dist_generic<T>(
+    a: &ChunkedArray<FixedSizeListType>,
+    b: &ChunkedArray<FixedSizeListType>,
+    p: i32,
+) -> PolarsResult<ChunkedArray<T>>
+where
+    T: PolarsFloatType,
+    T::Native: Float + std::ops::Sub<Output = T::Native>,
+{
+    let p_float = T::Native::from(p).unwrap();
+    let inv_p = T::Native::one() / p_float;
+    
+    vector_distance_calc::<T, _>(a, b, move |a, b| {
+        let sum: T::Native = a.iter()
+            .zip(b.iter())
+            .map(|(x, y)| (*x - *y).abs().powf(p_float))
+            .sum();
+        sum.powf(inv_p)
+    })
 }
 
 pub fn chebyshev_dist<T>(

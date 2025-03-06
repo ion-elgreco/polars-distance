@@ -3,6 +3,7 @@ use polars::prelude::arity::{try_binary_elementwise, try_unary_elementwise};
 use polars::prelude::*;
 use polars_arrow::array::{new_null_array, Array, PrimitiveArray};
 use polars::export::num::Float;
+use polars_core::export::num_traits::{Zero, One, Float, FromPrimitive};
 
 
 fn collect_into_vecf64(arr: Box<dyn Array>) -> Vec<f64> {
@@ -152,7 +153,7 @@ pub fn euclidean_dist<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     polars_ensure!(
         a.inner_dtype() == b.inner_dtype(),
@@ -244,7 +245,7 @@ pub fn cosine_dist<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     polars_ensure!(
         a.inner_dtype() == b.inner_dtype(),
@@ -359,7 +360,7 @@ pub fn vector_distance_calc<T, F>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
     F: Fn(&[T::Native], &[T::Native]) -> T::Native,
 {
     polars_ensure!(
@@ -454,7 +455,7 @@ pub fn minkowski_dist_generic<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     let p_float = T::Native::from(p).unwrap();
     let inv_p = T::Native::one() / p_float;
@@ -474,7 +475,7 @@ pub fn chebyshev_dist<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     vector_distance_calc::<T, _>(a, b, |a, b| {
         a.iter()
@@ -490,7 +491,7 @@ pub fn canberra_dist<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     vector_distance_calc::<T, _>(a, b, |a, b| {
         a.iter()
@@ -514,7 +515,7 @@ pub fn manhattan_dist<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     vector_distance_calc::<T, _>(a, b, |a, b| {
         a.iter()
@@ -530,7 +531,7 @@ pub fn bray_curtis_dist<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     vector_distance_calc::<T, _>(a, b, |a, b| {
         let sum_abs_diff: T::Native = a.iter()
@@ -556,7 +557,7 @@ pub fn l3_norm_dist<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     vector_distance_calc::<T, _>(a, b, |a, b| {
         let sum: T::Native = a.iter()
@@ -573,7 +574,7 @@ pub fn l4_norm_dist<T>(
 ) -> PolarsResult<ChunkedArray<T>>
 where
     T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native>,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
     vector_distance_calc::<T, _>(a, b, |a, b| {
         let sum: T::Native = a.iter()

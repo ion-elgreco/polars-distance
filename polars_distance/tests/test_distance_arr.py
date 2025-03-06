@@ -135,16 +135,13 @@ def test_euclidean_float32(data):
     assert result["dist_euclidean_f32"].dtype == pl.Float32
     assert abs(result["dist_euclidean_f32"][0] - 11.045361) < 1e-5
 
-    # Test type consistency by using mixed types
-    result_mixed = df.select(
-        pld.col("arr_f32")
-        .dist_arr.euclidean(
-            pl.lit([10.0, 8.0, 5.0, 3.0], dtype=pl.Array(pl.Float64, 4))
-        )
-        .alias("dist_mixed")
+    # Mixing types should follow Polars casting rules (higher precision wins)
+    result_mixed = data.select(
+        pl.col("arr2").dist_arr.euclidean("arr3").alias("dist_mixed"),
+        pl.col("arr3").dist_arr.euclidean("arr2").alias("dist_mixed_rev"),
     )
-    # Should follow Polars casting rules (higher precision wins)
     assert result_mixed["dist_mixed"].dtype == pl.Float64
+    assert result_mixed["dist_mixed_rev"].dtype == pl.Float64
 
 
 def test_hamming_str(data):

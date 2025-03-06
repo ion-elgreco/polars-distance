@@ -390,7 +390,7 @@ pub fn determine_distance_output_type(
     )
 }
 
-pub fn compute_array_distance<F, G>(
+fn compute_array_distance<F, G>(
     x: &ArrayChunked, 
     y: &ArrayChunked, 
     distance_name: &str,
@@ -417,16 +417,28 @@ where
             f32_impl(x, y)
         },
         DataType::Float64 => {
-            // Cast x to Float64 if needed
-            let x_f64 = if !matches!(x.inner_dtype(), DataType::Float64) {
-                x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?.array()?
+            // Create variables to hold the owned data if we need to cast
+            let x_cast_result = if !matches!(x.inner_dtype(), DataType::Float64) {
+                Some(x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?)
+            } else {
+                None
+            };
+            
+            let y_cast_result = if !matches!(y.inner_dtype(), DataType::Float64) {
+                Some(y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?)
+            } else {
+                None
+            };
+            
+            // Now get the references, from either the cast result or the original
+            let x_f64 = if let Some(cast_x) = &x_cast_result {
+                cast_x.array()?
             } else {
                 x
             };
             
-            // Cast y to Float64 if needed
-            let y_f64 = if !matches!(y.inner_dtype(), DataType::Float64) {
-                y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?.array()?
+            let y_f64 = if let Some(cast_y) = &y_cast_result {
+                cast_y.array()?
             } else {
                 y
             };

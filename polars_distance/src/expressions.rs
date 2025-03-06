@@ -378,23 +378,23 @@ where
     match (x.inner_dtype(), y.inner_dtype(), &output_type) {
         // Both Float32 -> Float32 output
         (DataType::Float32, DataType::Float32, DataType::Float32) => {
-            f32_impl(x, y)
+            f32_impl(x, y).map(|ca| ca.into_series())
         },
         // Both Float64 -> Float64 output
         (DataType::Float64, DataType::Float64, DataType::Float64) => {
-            f64_impl(x, y)
+            f64_impl(x, y).map(|ca| ca.into_series())
         },
         // Float32 and Float64 -> cast Float32 to Float64, Float64 output
         (DataType::Float32, DataType::Float64, DataType::Float64) => {
             // Cast x to Float64
             let x_f64 = x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?;
-            f64_impl(x_f64.array()?, y)
+            f64_impl(x_f64.array()?, y).map(|ca| ca.into_series())
         },
         // Float64 and Float32 -> cast Float32 to Float64, Float64 output
         (DataType::Float64, DataType::Float32, DataType::Float64) => {
             // Cast y to Float64
             let y_f64 = y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?;
-            f64_impl(x, y_f64.array()?)
+            f64_impl(x, y_f64.array()?).map(|ca| ca.into_series())
         },
         // This should be unreachable since we've filtered the types above
         _ => unreachable!()

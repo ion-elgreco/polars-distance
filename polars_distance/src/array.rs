@@ -285,7 +285,7 @@ where
                             .unwrap()
                             .values_iter();
 
-                        let dot_prod = a.clone().zip(b.clone()).map(|(x, y)| *x * *y).sum();
+                        let dot_prod: T::Native = a.clone().zip(b.clone()).map(|(x, y)| *x * *y).sum();
                         let mag1 = a.map(|x| x.powi(2)).sum::<T::Native>().sqrt();
                         let mag2 = b.map(|y| y.powi(2)).sum::<T::Native>().sqrt();
 
@@ -456,7 +456,7 @@ where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
-    let p_float = T::Native::from(p as f64).unwrap();
+    let p_float = T::Native::from_f64(p as f64).unwrap();
     let inv_p = T::Native::one() / p_float;
     
     vector_distance_calc::<T, _>(a, b, move |a, b| {
@@ -563,7 +563,8 @@ where
             .zip(b.iter())
             .map(|(x, y)| (*x - *y).abs().powi(3))
             .sum();
-        sum.powf(T::Native::one() / T::Native::from(3.0).unwrap())
+        let one_third = T::Native::from_f64(1.0/3.0).unwrap();
+        sum.powf(one_third)
     })
 }
 
@@ -580,6 +581,7 @@ where
             .zip(b.iter())
             .map(|(x, y)| (*x - *y).abs().powi(4))
             .sum();
-        sum.powf(T::Native::one() / T::Native::from(4.0).unwrap())
+        let one_fourth = T::Native::from_f64(0.25).unwrap();
+        sum.powf(one_fourth)
     })
 }

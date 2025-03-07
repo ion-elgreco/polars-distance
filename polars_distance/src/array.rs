@@ -4,213 +4,6 @@ use polars::prelude::*;
 use polars_arrow::array::{new_null_array, PrimitiveArray};
 use num_traits::{Zero, One, Float, FromPrimitive};
 
-
-pub fn euclidean_dist<T>(
-    a: &ChunkedArray<FixedSizeListType>,
-    b: &ChunkedArray<FixedSizeListType>,
-) -> PolarsResult<ChunkedArray<T>>
-where
-    T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
-{
-    polars_ensure!(
-        a.inner_dtype() == b.inner_dtype(),
-        ComputeError: "inner data types don't match"
-    );
-    polars_ensure!(
-        a.inner_dtype().is_numeric(),
-        ComputeError: "inner data types must be numeric"
-    );
-
-    // Cast to the target float type
-    let s1 = a.cast(&DataType::Array(Box::new(T::get_dtype()), a.width()))?;
-    let s2 = b.cast(&DataType::Array(Box::new(T::get_dtype()), a.width()))?;
-
-    let a: &ArrayChunked = s1.array()?;
-    let b: &ArrayChunked = s2.array()?;
-
-    let (a, b) = if a.len() < b.len() { (b, a) } else { (a, b) };
-    match b.len() {
-        1 => match unsafe { b.get_unchecked(0) } {
-            Some(b_value) => {
-                if b_value.null_count() > 0 {
-                    polars_bail!(ComputeError: "array cannot contain nulls")
-                }
-                try_unary_elementwise(a, |a| match a {
-                    Some(a) => {
-                        if a.null_count() > 0 {
-                            polars_bail!(ComputeError: "array cannot contain nulls")
-                        }
-                        let a = a
-                            .as_any()
-                            .downcast_ref::<PrimitiveArray<T::Native>>()
-                            .unwrap()
-                            .values_iter();
-                        let b = b_value
-                            .as_any()
-                            .downcast_ref::<PrimitiveArray<T::Native>>()
-                            .unwrap()
-                            .values_iter();
-                        Ok(Some(
-                            a.zip(b).map(|(x, y)| (*x - *y).powi(2)).sum::<T::Native>().sqrt(),
-                        ))
-                    }
-                    _ => Ok(None),
-                })
-            }
-            None => unsafe {
-                // Use T's data type to create a null array of appropriate type
-                let arrow_data_type = match T::get_dtype() {
-                    DataType::Float32 => ArrowDataType::Float32,
-                    DataType::Float64 => ArrowDataType::Float64,
-                    _ => unreachable!("T must be Float32Type or Float64Type"),
-                };
-
-                Ok(ChunkedArray::from_chunks(
-                    a.name().clone(),
-                    vec![new_null_array(arrow_data_type, a.len())],
-                ))
-            },
-        },
-        _ => try_binary_elementwise(a, b, |a, b| match (a, b) {
-            (Some(a), Some(b)) => {
-                if a.null_count() > 0 || b.null_count() > 0 {
-                    polars_bail!(ComputeError: "array cannot contain nulls")
-                } else {
-                    let a = a
-                        .as_any()
-                        .downcast_ref::<PrimitiveArray<T::Native>>()
-                        .unwrap()
-                        .values_iter();
-                    let b = b
-                        .as_any()
-                        .downcast_ref::<PrimitiveArray<T::Native>>()
-                        .unwrap()
-                        .values_iter();
-                    Ok(Some(
-                        a.zip(b).map(|(x, y)| (*x - *y).powi(2)).sum::<T::Native>().sqrt(),
-                    ))
-                }
-            }
-            _ => Ok(None),
-        }),
-    }
-}
-
-pub fn cosine_dist<T>(
-    a: &ChunkedArray<FixedSizeListType>,
-    b: &ChunkedArray<FixedSizeListType>,
-) -> PolarsResult<ChunkedArray<T>>
-where
-    T: PolarsFloatType,
-    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
-{
-    polars_ensure!(
-        a.inner_dtype() == b.inner_dtype(),
-        ComputeError: "inner data types don't match"
-    );
-    polars_ensure!(
-        a.inner_dtype().is_numeric(),
-        ComputeError: "inner data types must be numeric"
-    );
-
-    // Cast to the target float type
-    let s1 = a.cast(&DataType::Array(Box::new(T::get_dtype()), a.width()))?;
-    let s2 = b.cast(&DataType::Array(Box::new(T::get_dtype()), a.width()))?;
-
-    let a: &ArrayChunked = s1.array()?;
-    let b: &ArrayChunked = s2.array()?;
-
-    let (a, b) = if a.len() < b.len() { (b, a) } else { (a, b) };
-    match b.len() {
-        1 => match unsafe { b.get_unchecked(0) } {
-            Some(b_value) => {
-                if b_value.null_count() > 0 {
-                    polars_bail!(ComputeError: "array cannot contain nulls")
-                }
-                arity::try_unary_elementwise(a, |a| match a {
-                    Some(a) => {
-                        if a.null_count() > 0 {
-                            polars_bail!(ComputeError: "array cannot contain nulls")
-                        }
-                        let a = a
-                            .as_any()
-                            .downcast_ref::<PrimitiveArray<T::Native>>()
-                            .unwrap()
-                            .values_iter();
-                        let b = b_value
-                            .as_any()
-                            .downcast_ref::<PrimitiveArray<T::Native>>()
-                            .unwrap()
-                            .values_iter();
-
-                        let dot_prod: T::Native = a.clone().zip(b.clone()).map(|(x, y)| *x * *y).sum();
-                        let mag1 = a.map(|x| x.powi(2)).sum::<T::Native>().sqrt();
-                        let mag2 = b.map(|y| y.powi(2)).sum::<T::Native>().sqrt();
-
-                        let zero = T::Native::zero();
-                        let one = T::Native::one();
-                        
-                        let res = if mag1 == zero || mag2 == zero {
-                            zero
-                        } else {
-                            one - (dot_prod / (mag1 * mag2))
-                        };
-                        Ok(Some(res))
-                    }
-                    _ => Ok(None),
-                })
-            }
-            None => unsafe {
-                // Use T's data type to create a null array of appropriate type
-                let arrow_data_type = match T::get_dtype() {
-                    DataType::Float32 => ArrowDataType::Float32,
-                    DataType::Float64 => ArrowDataType::Float64,
-                    _ => unreachable!("T must be Float32Type or Float64Type"),
-                };
-
-                Ok(ChunkedArray::from_chunks(
-                    a.name().clone(),
-                    vec![new_null_array(arrow_data_type, a.len())],
-                ))
-            },
-        },
-        _ => arity::try_binary_elementwise(a, b, |a, b| match (a, b) {
-            (Some(a), Some(b)) => {
-                if a.null_count() > 0 || b.null_count() > 0 {
-                    polars_bail!(ComputeError: "array cannot contain nulls")
-                } else {
-                    let a = a
-                        .as_any()
-                        .downcast_ref::<PrimitiveArray<T::Native>>()
-                        .unwrap()
-                        .values_iter();
-                    let b = b
-                        .as_any()
-                        .downcast_ref::<PrimitiveArray<T::Native>>()
-                        .unwrap()
-                        .values_iter();
-
-                    let dot_prod: T::Native = a.clone().zip(b.clone()).map(|(x, y)| *x * *y).sum();
-                    let mag1 = a.map(|x| x.powi(2)).sum::<T::Native>().sqrt();
-                    let mag2 = b.map(|y| y.powi(2)).sum::<T::Native>().sqrt();
-
-                    let zero = T::Native::zero();
-                    let one = T::Native::one();
-                    
-                    let res = if mag1 == zero || mag2 == zero {
-                        zero
-                    } else {
-                        one - (dot_prod / (mag1 * mag2))
-                    };
-                    Ok(Some(res))
-                }
-            }
-            _ => Ok(None),
-        }),
-    }
-}
-
 pub fn vector_distance_calc<T, F>(
     a: &ChunkedArray<FixedSizeListType>,
     b: &ChunkedArray<FixedSizeListType>,
@@ -245,7 +38,7 @@ where
                 if b_value.null_count() > 0 {
                     polars_bail!(ComputeError: "array cannot contain nulls")
                 }
-                arity::try_unary_elementwise(a, |a| match a {
+                try_unary_elementwise(a, |a| match a {
                     Some(a) => {
                         if a.null_count() > 0 {
                             polars_bail!(ComputeError: "array cannot contain nulls")
@@ -281,7 +74,7 @@ where
                 ))
             },
         },
-        _ => arity::try_binary_elementwise(a, b, |a, b| match (a, b) {
+        _ => try_binary_elementwise(a, b, |a, b| match (a, b) {
             (Some(a), Some(b)) => {
                 if a.null_count() > 0 || b.null_count() > 0 {
                     polars_bail!(ComputeError: "array cannot contain nulls")
@@ -304,6 +97,57 @@ where
             _ => Ok(None),
         }),
     }
+}
+
+pub fn euclidean_dist<T>(
+    a: &ChunkedArray<FixedSizeListType>,
+    b: &ChunkedArray<FixedSizeListType>,
+) -> PolarsResult<ChunkedArray<T>>
+where
+    T: PolarsFloatType,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+{
+    vector_distance_calc::<T, _>(a, b, |a_slice, b_slice| {
+        a_slice
+            .iter()
+            .zip(b_slice.iter())
+            .map(|(x, y)| (*x - *y).powi(2))
+            .sum::<T::Native>()
+            .sqrt()
+    })
+}
+
+pub fn cosine_dist<T>(
+    a: &ChunkedArray<FixedSizeListType>,
+    b: &ChunkedArray<FixedSizeListType>,
+) -> PolarsResult<ChunkedArray<T>>
+where
+    T: PolarsFloatType,
+    T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+{
+    vector_distance_calc::<T, _>(a, b, |a_slice, b_slice| {
+        let dot_prod = a_slice
+            .iter()
+            .zip(b_slice.iter())
+            .map(|(x, y)| *x * *y)
+            .sum::<T::Native>();
+        let mag1 = a_slice
+            .iter()
+            .map(|x| x.powi(2))
+            .sum::<T::Native>()
+            .sqrt();
+        let mag2 = b_slice
+            .iter()
+            .map(|y| y.powi(2))
+            .sum::<T::Native>()
+            .sqrt();
+
+        if mag1.is_zero() || mag2.is_zero() {
+            T::Native::zero()
+        } else {
+            T::Native::one() - (dot_prod / (mag1 * mag2))
+        }
+    })
 }
 
 pub fn minkowski_dist<T>(

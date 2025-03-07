@@ -1,5 +1,6 @@
 use crate::array::{
-    cosine_dist, distance_calc_numeric_inp, distance_calc_uint_inp, euclidean_dist, minkowski_dist,
+    bray_curtis_dist, canberra_dist, chebyshev_dist, cosine_dist, distance_calc_numeric_inp,
+    distance_calc_uint_inp, euclidean_dist, l3_norm_dist, l4_norm_dist, manhattan_dist, minkowski_dist,
 };
 use crate::list::{
     cosine_set_distance, jaccard_index, overlap_coef, sorensen_index, tversky_index,

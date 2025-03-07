@@ -12,7 +12,6 @@ use crate::string::{
     osa_normalized_dist, postfix_dist, postfix_normalized_dist, prefix_dist,
     prefix_normalized_dist,
 };
-use distances::vectors::{bray_curtis, canberra, chebyshev, l3_norm, l4_norm, manhattan};
 use polars::prelude::*;
 use polars_arrow::array::new_null_array;
 use pyo3_polars::derive::polars_expr;

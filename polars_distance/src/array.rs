@@ -1,4 +1,4 @@
-use distances::vectors::minkowski;
+use distances::vectors::{bray_curtis, canberra, chebyshev, l3_norm, l4_norm, manhattan, minkowski};
 use polars::prelude::arity::{try_binary_elementwise, try_unary_elementwise};
 use polars::prelude::*;
 use polars_arrow::array::{new_null_array, PrimitiveArray};
@@ -171,13 +171,9 @@ pub fn chebyshev_dist<T>(
 where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+    <T as polars::prelude::PolarsNumericType>::Native: distances::Number,
 {
-    vector_distance_calc::<T, _>(a, b, |a, b| {
-        a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (*x - *y).abs())
-            .fold(T::Native::zero(), |max, val| if val > max { val } else { max })
-    })
+    vector_distance_calc::<T, _>(a, b, chebyshev)
 }
 
 pub fn canberra_dist<T>(
@@ -187,21 +183,9 @@ pub fn canberra_dist<T>(
 where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+    <T as polars::prelude::PolarsNumericType>::Native: distances::number::Float,
 {
-    vector_distance_calc::<T, _>(a, b, |a, b| {
-        a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| {
-                let abs_diff = (*x - *y).abs();
-                let abs_sum = x.abs() + y.abs();
-                if abs_sum > T::Native::zero() {
-                    abs_diff / abs_sum
-                } else {
-                    T::Native::zero()
-                }
-            })
-            .sum()
-    })
+    vector_distance_calc::<T, _>(a, b, canberra)
 }
 
 pub fn manhattan_dist<T>(
@@ -211,13 +195,9 @@ pub fn manhattan_dist<T>(
 where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+    <T as polars::prelude::PolarsNumericType>::Native: distances::Number,
 {
-    vector_distance_calc::<T, _>(a, b, |a, b| {
-        a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (*x - *y).abs())
-            .sum()
-    })
+    vector_distance_calc::<T, _>(a, b, manhattan)
 }
 
 pub fn bray_curtis_dist<T>(
@@ -227,23 +207,9 @@ pub fn bray_curtis_dist<T>(
 where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+    <T as polars::prelude::PolarsNumericType>::Native: distances::number::Float,
 {
-    vector_distance_calc::<T, _>(a, b, |a, b| {
-        let sum_abs_diff: T::Native = a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (*x - *y).abs())
-            .sum();
-        let sum_abs_sum: T::Native = a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| x.abs() + y.abs())
-            .sum();
-        
-        if sum_abs_sum > T::Native::zero() {
-            sum_abs_diff / sum_abs_sum
-        } else {
-            T::Native::zero()
-        }
-    })
+    vector_distance_calc::<T, _>(a, b, bray_curtis)
 }
 
 pub fn l3_norm_dist<T>(
@@ -253,15 +219,9 @@ pub fn l3_norm_dist<T>(
 where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+    <T as polars::prelude::PolarsNumericType>::Native: distances::number::Float,
 {
-    vector_distance_calc::<T, _>(a, b, |a, b| {
-        let sum: T::Native = a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (*x - *y).abs().powi(3))
-            .sum();
-        let one_third = T::Native::from_f64(1.0/3.0).unwrap();
-        sum.powf(one_third)
-    })
+    vector_distance_calc::<T, _>(a, b, l3_norm)
 }
 
 pub fn l4_norm_dist<T>(
@@ -271,13 +231,7 @@ pub fn l4_norm_dist<T>(
 where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+    <T as polars::prelude::PolarsNumericType>::Native: distances::number::Float,
 {
-    vector_distance_calc::<T, _>(a, b, |a, b| {
-        let sum: T::Native = a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (*x - *y).abs().powi(4))
-            .sum();
-        let one_fourth = T::Native::from_f64(0.25).unwrap();
-        sum.powf(one_fourth)
-    })
+    vector_distance_calc::<T, _>(a, b, l4_norm)
 }

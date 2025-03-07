@@ -1,5 +1,5 @@
 use crate::array::{
-    cosine_dist, distance_calc_numeric_inp, distance_calc_uint_inp, euclidean_dist, minkowski_dist,
+    bray_curtis_dist, canberra_dist, chebyshev_dist, cosine_dist, euclidean_dist, l3_norm_dist, l4_norm_dist, manhattan_dist, minkowski_dist,
 };
 use crate::list::{
     cosine_set_distance, jaccard_index, overlap_coef, sorensen_index, tversky_index,
@@ -12,11 +12,11 @@ use crate::string::{
     osa_normalized_dist, postfix_dist, postfix_normalized_dist, prefix_dist,
     prefix_normalized_dist,
 };
-use distances::vectors::{bray_curtis, canberra, chebyshev, l3_norm, l4_norm, manhattan};
 use polars::prelude::*;
 use polars_arrow::array::new_null_array;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
+
 
 #[derive(Deserialize)]
 struct TverskyIndexKwargs {
@@ -85,6 +85,7 @@ fn hamming_str(inputs: &[Series]) -> PolarsResult<Series> {
 
     Ok(elementwise_str_u32(x, y, hamming_dist).into_series())
 }
+
 
 #[polars_expr(output_type=Float64)]
 fn hamming_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
@@ -274,37 +275,213 @@ fn prefix_normalized_str(inputs: &[Series]) -> PolarsResult<Series> {
     Ok(elementwise_str_f64(x, y, prefix_normalized_dist).into_series())
 }
 
+// General helper for all distance metrics
+fn infer_distance_arr_output(input_fields: &[Field], metric_name: &str) -> PolarsResult<Field> {
+    // We expect two input Fields for a binary expression (the two Series).
+    // The first input_fields[0] must be an Array(F32 or F64, width).
+    // Similarly input_fields[1].dtype should match.
+
+    if input_fields.len() != 2 {
+        polars_bail!(ShapeMismatch: "{}_arr expects 2 inputs, got {}", metric_name, input_fields.len());
+    }
+
+    // Get the type of first input
+    let first_type = match &input_fields[0].dtype {
+        // If the input is an Array with an inner dtype (like Float32 or Float64)
+        DataType::Array(inner, _width) => &**inner,
+        dt => {
+            polars_bail!(
+                ComputeError:
+                "{}_arr input must be an Array, got {}",
+                metric_name,
+                dt
+            );
+        }
+    };
+    
+    // Get the type of second input
+    let second_type = match &input_fields[1].dtype {
+        DataType::Array(inner, _width) => &**inner,
+        _ => first_type, // Default to first type if second isn't an array
+    };
+
+    // If either input is Float64, output is Float64, otherwise Float32
+    match (first_type, second_type) {
+        (DataType::Float32, DataType::Float32) => {
+            Ok(Field::new(metric_name.into(), DataType::Float32))
+        }
+        (DataType::Float64, _) | (_, DataType::Float64) => {
+            Ok(Field::new(metric_name.into(), DataType::Float64))
+        }
+        (DataType::UInt64, _) | (_, DataType::UInt64) => {
+            Ok(Field::new(metric_name.into(), DataType::Float64))
+        }
+        (DataType::Float32, _) | (_, DataType::Float32) => {
+            Ok(Field::new(metric_name.into(), DataType::Float32))
+        }
+        _ => {
+            polars_bail!(
+                ComputeError:
+                "{} distance not supported for inner types",
+                metric_name
+            );
+        }
+    }
+}
+
+fn infer_euclidean_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "euclidean")
+}
+
+fn infer_cosine_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "cosine")
+}
+
+fn infer_chebyshev_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "chebyshev")
+}
+
+fn infer_canberra_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "canberra")
+}
+
+fn infer_manhatten_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "manhatten")
+}
+
+fn infer_l3_norm_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "l3_norm")
+}
+
+fn infer_l4_norm_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "l4_norm")
+}
+
+fn infer_bray_curtis_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "bray_curtis")
+}
+
+fn infer_minkowski_arr_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    infer_distance_arr_output(input_fields, "minkowski")
+}
+
+// Function to determine the output data type for distance calculations
+pub fn determine_distance_output_type(
+    x_dtype: &DataType,
+    y_dtype: &DataType,
+    distance_name: &str,
+) -> PolarsResult<DataType> {
+    // If any input is Float64 or UInt64, output is Float64
+    if matches!(x_dtype, DataType::Float64 | DataType::UInt64) || 
+       matches!(y_dtype, DataType::Float64 | DataType::UInt64) {
+        return Ok(DataType::Float64);
+    }
+    // Both are Float32, output is Float32
+    if matches!(x_dtype, DataType::Float32) && matches!(y_dtype, DataType::Float32) {
+        return Ok(DataType::Float32);
+    }
+    polars_bail!(
+        ComputeError:
+        "{} distance not supported for inner dtype: {:?} and {:?}",
+        distance_name,
+        x_dtype,
+        y_dtype
+    )
+}
+
+fn compute_array_distance<F, G>(
+    x: &ArrayChunked, 
+    y: &ArrayChunked, 
+    distance_name: &str,
+    f32_impl: F,
+    f64_impl: G
+) -> PolarsResult<Series> 
+where 
+    F: FnOnce(&ArrayChunked, &ArrayChunked) -> PolarsResult<Series>,
+    G: FnOnce(&ArrayChunked, &ArrayChunked) -> PolarsResult<Series>
+{
+    if x.width() != y.width() {
+        polars_bail!(InvalidOperation:
+            "The dimensions of each array are not the same.
+                `x` width: {},
+                `y` width: {}", x.width(), y.width());
+    }
+
+    // Determine the output type
+    let output_type = determine_distance_output_type(&x.inner_dtype(), &y.inner_dtype(), distance_name)?;
+    
+    match output_type {
+        DataType::Float32 => {
+            // Both must be Float32 already (from our type determination logic)
+            f32_impl(x, y)
+        },
+        DataType::Float64 => {
+            // Create variables to hold the owned data if we need to cast
+            let x_cast_result = if !matches!(x.inner_dtype(), DataType::Float64) {
+                Some(x.cast(&DataType::Array(Box::new(DataType::Float64), x.width()))?)
+            } else {
+                None
+            };
+            
+            let y_cast_result = if !matches!(y.inner_dtype(), DataType::Float64) {
+                Some(y.cast(&DataType::Array(Box::new(DataType::Float64), y.width()))?)
+            } else {
+                None
+            };
+            
+            // Now get the references, from either the cast result or the original
+            let x_f64 = if let Some(cast_x) = &x_cast_result {
+                cast_x.array()?
+            } else {
+                x
+            };
+            
+            let y_f64 = if let Some(cast_y) = &y_cast_result {
+                cast_y.array()?
+            } else {
+                y
+            };
+            
+            f64_impl(x_f64, y_f64)
+        },
+        _ => unreachable!("Output type should only be Float32 or Float64")
+    }
+}
+
 // ARRAY EXPRESSIONS
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_euclidean_arr_dtype)]
 fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
 
-    if x.width() != y.width() {
-        polars_bail!(InvalidOperation:
-            "The dimensions of each array are not the same. 
-                `{}` width: {}, 
-                `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
-    }
 
-    euclidean_dist(x, y).map(|ca| ca.into_series())
+    // Use our reusable function to compute the distance
+    compute_array_distance(
+        x, 
+        y, 
+        "euclidean",
+        |x_f32, y_f32| euclidean_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| euclidean_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+    )
 }
 
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_cosine_arr_dtype)]
 fn cosine_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
 
-    if x.width() != y.width() {
-        polars_bail!(InvalidOperation:
-            "The dimensions of each array are not the same. 
-                `{}` width: {}, 
-                `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
-    }
-    cosine_dist(x, y).map(|ca| ca.into_series())
+
+    // Use our reusable function to compute the distance
+    compute_array_distance(
+        x, 
+        y, 
+        "cosine",
+        |x_f32, y_f32| cosine_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| cosine_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+    )
 }
 
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_minkowski_arr_dtype)]
 fn minkowski_arr(inputs: &[Series], kwargs: MinkowskiKwargs) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
@@ -315,10 +492,18 @@ fn minkowski_arr(inputs: &[Series], kwargs: MinkowskiKwargs) -> PolarsResult<Ser
                 `{}` width: {},
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
-    minkowski_dist(x, y, kwargs.p).map(|ca| ca.into_series())
+    
+    let p = kwargs.p;
+    compute_array_distance(
+        x, 
+        y, 
+        "minkowski",
+        |x_f32, y_f32| minkowski_dist::<Float32Type>(x_f32, y_f32, p).map(|ca| ca.into_series()),
+        |x_f64, y_f64| minkowski_dist::<Float64Type>(x_f64, y_f64, p).map(|ca| ca.into_series())
+    )
 }
 
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_chebyshev_arr_dtype)]
 fn chebyshev_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
@@ -329,10 +514,17 @@ fn chebyshev_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {},
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
-    distance_calc_numeric_inp(x, y, chebyshev).map(|ca| ca.into_series())
+    
+    compute_array_distance(
+        x, 
+        y, 
+        "chebyshev",
+        |x_f32, y_f32| chebyshev_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| chebyshev_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+    )
 }
 
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_canberra_arr_dtype)]
 fn canberra_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
@@ -343,10 +535,17 @@ fn canberra_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {},
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
-    distance_calc_numeric_inp(x, y, canberra).map(|ca| ca.into_series())
+    
+    compute_array_distance(
+        x, 
+        y, 
+        "canberra",
+        |x_f32, y_f32| canberra_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| canberra_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+    )
 }
 
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_manhatten_arr_dtype)]
 fn manhatten_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
@@ -358,10 +557,16 @@ fn manhatten_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
 
-    distance_calc_numeric_inp(x, y, manhattan).map(|ca| ca.into_series())
+    compute_array_distance(
+        x, 
+        y, 
+        "manhatten",
+        |x_f32, y_f32| manhattan_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| manhattan_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+    )
 }
 
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_l3_norm_arr_dtype)]
 fn l3_norm_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
@@ -373,10 +578,16 @@ fn l3_norm_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
 
-    distance_calc_numeric_inp(x, y, l3_norm).map(|ca| ca.into_series())
+    compute_array_distance(
+        x, 
+        y, 
+        "l3_norm",
+        |x_f32, y_f32| l3_norm_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| l3_norm_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+    )
 }
 
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_l4_norm_arr_dtype)]
 fn l4_norm_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
@@ -388,10 +599,16 @@ fn l4_norm_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
 
-    distance_calc_numeric_inp(x, y, l4_norm).map(|ca| ca.into_series())
+    compute_array_distance(
+        x, 
+        y, 
+        "l4_norm",
+        |x_f32, y_f32| l4_norm_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| l4_norm_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+    )
 }
 
-#[polars_expr(output_type=Float64)]
+#[polars_expr(output_type_func=infer_bray_curtis_arr_dtype)]
 fn bray_curtis_arr(inputs: &[Series]) -> PolarsResult<Series> {
     let x: &ArrayChunked = inputs[0].array()?;
     let y: &ArrayChunked = inputs[1].array()?;
@@ -403,7 +620,13 @@ fn bray_curtis_arr(inputs: &[Series]) -> PolarsResult<Series> {
                 `{}` width: {}", inputs[0].name(), x.width(), inputs[1].name(), y.width());
     }
 
-    distance_calc_uint_inp(x, y, bray_curtis).map(|ca| ca.into_series())
+    compute_array_distance(
+        x, 
+        y, 
+        "bray_curtis",
+        |x_f32, y_f32| bray_curtis_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| bray_curtis_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+    )
 }
 
 // SET (list) EXPRESSIONS

@@ -1,6 +1,6 @@
-import pytest
 import polars as pl
 import polars_distance as pld
+import pytest
 from polars.testing import assert_frame_equal
 
 
@@ -10,12 +10,16 @@ def data():
         {
             "arr": [[1.0, 2.0, 3.0, 4.0]],
             "arr2": [[10.0, 8.0, 5.0, 3.0]],
+            "arr3": [[1.0, 2.0, 3.0, 4.0]],
+            "arr4": [[10.0, 8.0, 5.0, 3.0]],
             "str_l": ["hello world"],
             "str_r": ["hela wrld"],
         },
         schema={
             "arr": pl.Array(inner=pl.Float64, shape=4),
             "arr2": pl.Array(inner=pl.Float64, shape=4),
+            "arr3": pl.Array(inner=pl.Float32, shape=4),
+            "arr4": pl.Array(inner=pl.Float32, shape=4),
             "str_l": pl.Utf8,
             "str_r": pl.Utf8,
         },
@@ -37,11 +41,13 @@ def data_sets():
 def test_cosine(data):
     result = data.select(
         pld.col("arr").dist_arr.cosine("arr2").alias("dist_cosine"),
+        pld.col("arr3").dist_arr.cosine("arr4").alias("dist_cosine_f32"),
     )
 
     expected = pl.DataFrame(
         [
             pl.Series("dist_cosine", [0.31232593265732134], dtype=pl.Float64),
+            pl.Series("dist_cosine_f32", [0.31232593265732134], dtype=pl.Float32),
         ]
     )
 
@@ -51,11 +57,13 @@ def test_cosine(data):
 def test_chebyshev(data):
     result = data.select(
         pld.col("arr").dist_arr.chebyshev("arr2").alias("dist_chebyshev"),
+        pld.col("arr3").dist_arr.chebyshev("arr4").alias("dist_chebyshev_f32"),
     )
 
     expected = pl.DataFrame(
         [
             pl.Series("dist_chebyshev", [9.0], dtype=pl.Float64),
+            pl.Series("dist_chebyshev_f32", [9.0], dtype=pl.Float32),
         ]
     )
 
@@ -65,11 +73,13 @@ def test_chebyshev(data):
 def test_canberra(data):
     result = data.select(
         pld.col("arr").dist_arr.canberra("arr2").alias("dist_canberra"),
+        pld.col("arr3").dist_arr.canberra("arr4").alias("dist_canberra_f32"),
     )
 
     expected = pl.DataFrame(
         [
             pl.Series("dist_canberra", [1.811038961038961], dtype=pl.Float64),
+            pl.Series("dist_canberra_f32", [1.811038961038961], dtype=pl.Float32),
         ]
     )
 
@@ -82,11 +92,16 @@ def test_bray_curtis(data):
         .cast(pl.Array(pl.UInt64, 4))
         .dist_arr.bray_curtis(pl.col("arr2").cast(pl.Array(pl.UInt64, 4)))
         .alias("dist_bray"),
+        pld.col("arr3")
+        .cast(pl.Array(pl.UInt64, 4))
+        .dist_arr.bray_curtis(pl.col("arr4").cast(pl.Array(pl.UInt64, 4)))
+        .alias("dist_bray_f32"),
     )
 
     expected = pl.DataFrame(
         [
             pl.Series("dist_bray", [0.5], dtype=pl.Float64),
+            pl.Series("dist_bray_f32", [0.5], dtype=pl.Float64),
         ]
     )
 
@@ -96,11 +111,13 @@ def test_bray_curtis(data):
 def test_manhatten(data):
     result = data.select(
         pld.col("arr").dist_arr.manhatten("arr2").alias("dist_manhatten"),
+        pld.col("arr3").dist_arr.manhatten("arr4").alias("dist_manhatten_f32"),
     )
 
     expected = pl.DataFrame(
         [
             pl.Series("dist_manhatten", [18.0], dtype=pl.Float64),
+            pl.Series("dist_manhatten_f32", [18.0], dtype=pl.Float32),
         ]
     )
 
@@ -110,15 +127,28 @@ def test_manhatten(data):
 def test_euclidean(data):
     result = data.select(
         pld.col("arr").dist_arr.euclidean("arr2").alias("dist_euclidean"),
+        pld.col("arr3").dist_arr.euclidean("arr4").alias("dist_euclidean_f32"),
     )
 
     expected = pl.DataFrame(
         [
             pl.Series("dist_euclidean", [11.045361017187261], dtype=pl.Float64),
+            pl.Series("dist_euclidean_f32", [11.045361017187261], dtype=pl.Float32),
         ]
     )
 
     assert_frame_equal(result, expected)
+
+
+def test_float32_dtype_mixing(data):
+    """Mixing types should follow Polars casting rules (higher precision wins)."""
+    result_mixed = data.select(
+        pl.col("arr2").dist_arr.euclidean("arr3").alias("dist_mixed"),
+        pl.col("arr3").dist_arr.euclidean("arr2").alias("dist_mixed_rev"),
+    )
+
+    assert result_mixed["dist_mixed"].dtype == pl.Float64
+    assert result_mixed["dist_mixed_rev"].dtype == pl.Float64
 
 
 def test_hamming_str(data):

@@ -477,8 +477,8 @@ fn cosine_arr(inputs: &[Series]) -> PolarsResult<Series> {
         x, 
         y, 
         "cosine",
-        |x_f32, y_f32| crate::array::cosine_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::cosine_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+        |x_f32, y_f32| cosine_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| cosine_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
     )
 }
 
@@ -499,8 +499,8 @@ fn minkowski_arr(inputs: &[Series], kwargs: MinkowskiKwargs) -> PolarsResult<Ser
         x, 
         y, 
         "minkowski",
-        |x_f32, y_f32| crate::array::minkowski_dist::<Float32Type>(x_f32, y_f32, p).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::minkowski_dist::<Float64Type>(x_f64, y_f64, p).map(|ca| ca.into_series())
+        |x_f32, y_f32| minkowski_dist::<Float32Type>(x_f32, y_f32, p).map(|ca| ca.into_series()),
+        |x_f64, y_f64| minkowski_dist::<Float64Type>(x_f64, y_f64, p).map(|ca| ca.into_series())
     )
 }
 
@@ -520,8 +520,8 @@ fn chebyshev_arr(inputs: &[Series]) -> PolarsResult<Series> {
         x, 
         y, 
         "chebyshev",
-        |x_f32, y_f32| crate::array::chebyshev_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::chebyshev_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+        |x_f32, y_f32| chebyshev_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| chebyshev_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
     )
 }
 
@@ -541,8 +541,8 @@ fn canberra_arr(inputs: &[Series]) -> PolarsResult<Series> {
         x, 
         y, 
         "canberra",
-        |x_f32, y_f32| crate::array::canberra_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::canberra_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+        |x_f32, y_f32| canberra_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| canberra_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
     )
 }
 
@@ -562,8 +562,8 @@ fn manhatten_arr(inputs: &[Series]) -> PolarsResult<Series> {
         x, 
         y, 
         "manhatten",
-        |x_f32, y_f32| crate::array::manhattan_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::manhattan_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+        |x_f32, y_f32| manhattan_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| manhattan_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
     )
 }
 
@@ -583,8 +583,8 @@ fn l3_norm_arr(inputs: &[Series]) -> PolarsResult<Series> {
         x, 
         y, 
         "l3_norm",
-        |x_f32, y_f32| crate::array::l3_norm_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::l3_norm_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+        |x_f32, y_f32| l3_norm_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| l3_norm_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
     )
 }
 
@@ -604,8 +604,8 @@ fn l4_norm_arr(inputs: &[Series]) -> PolarsResult<Series> {
         x, 
         y, 
         "l4_norm",
-        |x_f32, y_f32| crate::array::l4_norm_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::l4_norm_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+        |x_f32, y_f32| l4_norm_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| l4_norm_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
     )
 }
 
@@ -625,8 +625,8 @@ fn bray_curtis_arr(inputs: &[Series]) -> PolarsResult<Series> {
         x, 
         y, 
         "bray_curtis",
-        |x_f32, y_f32| crate::array::bray_curtis_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::bray_curtis_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+        |x_f32, y_f32| bray_curtis_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| bray_curtis_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
     )
 }
 

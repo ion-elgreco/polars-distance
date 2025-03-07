@@ -456,16 +456,8 @@ where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
 {
-    let p_float = T::Native::from_f64(p as f64).unwrap();
-    let inv_p = T::Native::one() / p_float;
-    
-    vector_distance_calc::<T, _>(a, b, move |a, b| {
-        let sum: T::Native = a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (*x - *y).abs().powf(p_float))
-            .sum();
-        sum.powf(inv_p)
-    })
+    let metric = minkowski(p);
+    vector_distance_calc::<T, _>(a, b, metric)
 }
 
 pub fn chebyshev_dist<T>(

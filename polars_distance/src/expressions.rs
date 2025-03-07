@@ -1,6 +1,5 @@
 use crate::array::{
-    bray_curtis_dist, canberra_dist, chebyshev_dist, cosine_dist, distance_calc_numeric_inp,
-    distance_calc_uint_inp, euclidean_dist, l3_norm_dist, l4_norm_dist, manhattan_dist, minkowski_dist,
+    bray_curtis_dist, canberra_dist, chebyshev_dist, cosine_dist, euclidean_dist, l3_norm_dist, l4_norm_dist, manhattan_dist, minkowski_dist,
 };
 use crate::list::{
     cosine_set_distance, jaccard_index, overlap_coef, sorensen_index, tversky_index,
@@ -462,8 +461,8 @@ fn euclidean_arr(inputs: &[Series]) -> PolarsResult<Series> {
         x, 
         y, 
         "euclidean",
-        |x_f32, y_f32| crate::array::euclidean_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
-        |x_f64, y_f64| crate::array::euclidean_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
+        |x_f32, y_f32| euclidean_dist::<Float32Type>(x_f32, y_f32).map(|ca| ca.into_series()),
+        |x_f64, y_f64| euclidean_dist::<Float64Type>(x_f64, y_f64).map(|ca| ca.into_series())
     )
 }
 

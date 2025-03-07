@@ -455,6 +455,7 @@ pub fn minkowski_dist<T>(
 where
     T: PolarsFloatType,
     T::Native: Float + std::ops::Sub<Output = T::Native> + FromPrimitive + Zero + One,
+    <T as PolarsNumericType>::Native: distances::number::Float,
 {
     let metric = minkowski(p);
     vector_distance_calc::<T, _>(a, b, metric)
